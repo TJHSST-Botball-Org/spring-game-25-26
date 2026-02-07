@@ -16,10 +16,14 @@ const float BACK_RIGHT_MULTIPLIER = 0.912;
 const int PVC_ARM = 1;
 const int PVC_WRIST = 2;
 
-const int PVC_ARM_RAISE_VALUE = 1540;
+const int PVC_ARM_DROP_VALUE = 1472;
+const int armDropTemp = 1499;
+const int wristDropTemp = 975;
+
+
 const int PVC_ARM_LOWER_VALUE = 413; // TENTATIVE, WE DONT HAVE WHEELS YET SO THIS COULD CHANGE
 const int PVC_ARM_STOW_VALUE = 413;  // TENTATIVE, WE DONT HAVE WHEELS YET SO THIS COULD CHANGE
-const int PVC_WRIST_DROP_VALUE = 1409;
+const int PVC_WRIST_DROP_VALUE = 1030;
 const int PVC_WRIST_PICKUP_VALUE = 305;
 
 const int ENTREE_TOUCH_SENSOR = 0;
@@ -279,32 +283,11 @@ void line_up_with_black_line_behind()
 
 int main()
 {
-    open_entree_claw();
-    close_bottle_claw();
-    stow_bottle_arm();
-    move_forward_for_distance(29);
-    close_entree_claw();
-    move_backward_for_distance(16.5);
-    move_right_for_distance(39);
+    set_arm_up();
+    set_wrist_up();
 
-    // Move to the right, but make sure the back tophats don't touch the black line
-
-    turn_right_90_deg();
-    turn_right_90_deg();
-    move_forward_for_distance(9);
-    release_entrees();
-    close_entree_claw();
-    open_bottle_claw();
-    lower_bottle_arm();
-    move_backward_for_distance(8);
-    close_bottle_claw();
-    raise_bottle_arm();
-    turn_right_90_deg();
-    turn_right_90_deg();
-    move_left_for_distance(14);
-    move_backward_for_distance(4);
-    lower_bottle_arm();
-    open_bottle_claw();
+    turn_wrist_drop();
+    set_arm_drop();
 }
 
 /*
