@@ -1,46 +1,223 @@
 #include "nano.h"
 #include <queue>
-#include <tuple>
+#include <thread>
+#include <mutex>
+#include <chrono>
 #include <iostream>
 
 namespace Nano {
 
-// Forward declaration of worker thread
-void worker_thread_function();
+///////////////////////////////////////////////////////////////
+// Message Types
+///////////////////////////////////////////////////////////////
 
-// Thread-safe queues
-std::queue<std::tuple<unsigned int, MessageType, std::tuple<int,int>>> request_message_queue;
-std::queue<std::tuple<unsigned int, int>> response_message_queue;
+enum class MessageType {
+    WFM,
+    
+    // Motor
+    GET_MOTOR_POSITION,
+    CLEAR_MOTOR_POSITION,
+    SET_MOTOR_POWER,
+    MOVE_AT_VELOCITY,
+    MOVE_TO_POSITION,
+    MOVE_RELATIVE_POSITION,
+    IS_MOTOR_DONE,
+    FREEZE,
+
+    // Servo
+    SET_SERVO_ENABLED,
+    SET_ALL_SERVOS_ENABLED,
+    SET_SERVO_POSITION,
+    IS_SERVO_ENABLED,
+
+    // Digital / Analog
+    GET_ANALOG,
+    GET_DIGITAL,
+    SET_DIGITAL,
+
+    // Gyro
+    GET_GYRO_X,
+    GET_GYRO_Y,
+    GET_GYRO_Z,
+
+    // PID
+    GET_PID_GAINS,
+    SET_PID_GAINS,
+
+    // PWM
+    GET_PWM,
+    SET_PWM
+};
+
+///////////////////////////////////////////////////////////////
+// Message Struct
+///////////////////////////////////////////////////////////////
+
+struct Message {
+    unsigned int id;
+    MessageType type;
+
+    int a;
+    int b;
+    int c;
+    int d;
+    int e;
+    int f;
+    int g;
+
+    bool flag;
+
+    int response_int;
+    bool response_bool;
+};
+
+///////////////////////////////////////////////////////////////
+// Globals
+///////////////////////////////////////////////////////////////
+
+std::queue<Message> request_queue;
+std::queue<Message> response_queue;
+std::mutex message_mutex;
+
 unsigned int next_message_id = 0;
-Mutex message_mutex;
+bool worker_started = false;
+std::thread worker_thread;
 
-// Worker thread
-Thread worker_thread(worker_thread_function, false);
-bool has_already_started_worker_thread = false;
+///////////////////////////////////////////////////////////////
+// Worker Thread
+///////////////////////////////////////////////////////////////
 
-// Worker thread implementation
 void worker_thread_function() {
+
     while (true) {
-        wait_for_milliseconds(2);
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+
         message_mutex.lock();
 
-        if (!request_message_queue.empty()) {
-            auto request = request_message_queue.front();
-            request_message_queue.pop();
+        if (!request_queue.empty()) {
 
-            unsigned int id = std::get<0>(request);
-            MessageType type = std::get<1>(request);
-            auto content_tuple = std::get<2>(request); 
-            int motor_port = std::get<0>(content_tuple);
-            int value = std::get<1>(content_tuple);
+            Message msg = request_queue.front();
+            request_queue.pop();
 
-            switch(type) {
-                case MessageType::SET_MOTOR_POWER:
-                case MessageType::FREEZE_MOTOR:
-                    motor(motor_port, value); // value = 0 for freeze
+            switch (msg.type) {
+                case MessageType::WFM:
+                    msleep(msg.a);
                     break;
 
-                // Add more cases here for other motor/servo/analog/digital messages
+                // MOTOR
+                case MessageType::SET_MOTOR_POWER:
+                    motor(msg.a, msg.b);
+                    break;
+
+                case MessageType::FREEZE:
+                    motor(msg.a, 0);
+                    break;
+
+                case MessageType::GET_MOTOR_POSITION:
+                    msg.response_int = get_motor_position_counter(msg.a);
+                    response_queue.push(msg);
+                    break;
+
+                case MessageType::CLEAR_MOTOR_POSITION:
+                    clear_motor_position_counter(msg.a);
+                    break;
+
+                case MessageType::MOVE_AT_VELOCITY:
+                    move_at_velocity(msg.a, msg.b);
+                    break;
+
+                case MessageType::MOVE_TO_POSITION:
+                    move_to_position(msg.a, msg.b, msg.c);
+                    break;
+
+                case MessageType::MOVE_RELATIVE_POSITION:
+                    move_relative_position(msg.a, msg.b, msg.c);
+                    break;
+
+                case MessageType::IS_MOTOR_DONE:
+                    msg.response_bool = get_motor_done(msg.a);
+                    response_queue.push(msg);
+                    break;
+
+                // SERVO
+                case MessageType::SET_SERVO_ENABLED:
+                    set_servo_enabled(msg.a, msg.flag);
+                    break;
+
+                case MessageType::SET_ALL_SERVOS_ENABLED:
+                    if (msg.flag) enable_servos();
+                    else disable_servos();
+                    break;
+
+                case MessageType::SET_SERVO_POSITION:
+                    set_servo_position(msg.a, msg.b);
+                    break;
+
+                case MessageType::IS_SERVO_ENABLED:
+                    msg.response_bool = get_servo_enabled(msg.a);
+                    response_queue.push(msg);
+                    break;
+
+                // ANALOG / DIGITAL
+                case MessageType::GET_ANALOG:
+                    msg.response_int = analog(msg.a);
+                    response_queue.push(msg);
+                    break;
+
+                case MessageType::GET_DIGITAL:
+                    msg.response_int = digital(msg.a);
+                    response_queue.push(msg);
+                    break;
+
+                case MessageType::SET_DIGITAL:
+                    set_digital_value(msg.a, msg.b);
+                    break;
+
+                // GYRO
+                case MessageType::GET_GYRO_X:
+                    msg.response_int = gyro_x();
+                    response_queue.push(msg);
+                    break;
+
+                case MessageType::GET_GYRO_Y:
+                    msg.response_int = gyro_y();
+                    response_queue.push(msg);
+                    break;
+
+                case MessageType::GET_GYRO_Z:
+                    msg.response_int = gyro_z();
+                    response_queue.push(msg);
+                    break;
+
+                // PID
+                case MessageType::SET_PID_GAINS:
+                    set_pid_gains(msg.a, msg.b, msg.c, msg.d, msg.e, msg.f, msg.g);
+                    break;
+
+                case MessageType::GET_PID_GAINS: {
+                    short p,i,d,pd,id,dd;
+                    get_pid_gains(msg.a, &p,&i,&d,&pd,&id,&dd);
+                    msg.a = p;
+                    msg.b = i;
+                    msg.c = d;
+                    msg.d = pd;
+                    msg.e = id;
+                    msg.f = dd;
+                    response_queue.push(msg);
+                    break;
+                }
+
+                // PWM
+                case MessageType::SET_PWM:
+                    setpwm(msg.a, msg.b);
+                    break;
+
+                case MessageType::GET_PWM:
+                    msg.response_int = getpwm(msg.a);
+                    response_queue.push(msg);
+                    break;
+
                 default:
                     break;
             }
@@ -50,67 +227,147 @@ void worker_thread_function() {
     }
 }
 
-// Messaging helpers
-unsigned int send_message(MessageType type, int port, int value=0) {
+///////////////////////////////////////////////////////////////
+// Messaging Helpers
+///////////////////////////////////////////////////////////////
+
+unsigned int send_message(Message msg) {
+
     message_mutex.lock();
-    unsigned int msg_id = next_message_id++;
-    request_message_queue.push(std::make_tuple(msg_id, type, std::make_tuple(port, value)));
+
+    msg.id = next_message_id++;
+    request_queue.push(msg);
+
     message_mutex.unlock();
-    return msg_id;
+    return msg.id;
 }
 
-// Public API
-void start_nano() {
-    if (!has_already_started_worker_thread) {
-        std::cout << "Starting Nano!" << std::endl;
-        worker_thread.start();
-        has_already_started_worker_thread = true;
+Message send_and_wait(Message msg) {
+
+    unsigned int id = send_message(msg);
+
+    while (true) {
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(3));
+
+        message_mutex.lock();
+
+        if (!response_queue.empty()) {
+
+            Message response = response_queue.front();
+
+            if (response.id == id) {
+                response_queue.pop();
+                message_mutex.unlock();
+                return response;
+            }
+        }
+
+        message_mutex.unlock();
     }
 }
 
-void wait_for_milliseconds(int ms) {
-    msleep(ms);
+///////////////////////////////////////////////////////////////
+// System
+///////////////////////////////////////////////////////////////
+
+void start_nano() {
+    if (!worker_started) {
+        std::cout << "Starting Nano!" << std::endl;
+        worker_thread = std::thread(worker_thread_function);
+        worker_started = true;
+    }
 }
 
-// BaseRobot methods
+///////////////////////////////////////////////////////////////
+// BaseRobot
+///////////////////////////////////////////////////////////////
+
 BaseRobot::BaseRobot() {
     start_nano();
 }
 
-void BaseRobot::set_motor_power(int motor, int power) {
-    send_message(MessageType::SET_MOTOR_POWER, motor, power);
+void BaseRobot::wait_for_milliseconds(int ms) {
+    Message msg{};
+    msg.type = MessageType::WFM;
+    msg.a=ms;
+    send_message(msg);
 }
 
-void BaseRobot::freeze(int motor) {
-    send_message(MessageType::FREEZE_MOTOR, motor, 0); // send value=0
+    
+// Motor
+void BaseRobot::set_motor_power(int m,int p){
+    Message msg{};
+    msg.type = MessageType::SET_MOTOR_POWER;
+    msg.a=m; msg.b=p;
+    send_message(msg);
 }
 
-// Mutex implementation
-void Mutex::lock() {
-    _m.lock();
+void BaseRobot::freeze(int m){
+    Message msg{};
+    msg.type = MessageType::FREEZE;
+    msg.a=m;
+    send_message(msg);
 }
 
-void Mutex::unlock() {
-    _m.unlock();
+int BaseRobot::get_motor_position_counter(int m){
+    Message msg{};
+    msg.type = MessageType::GET_MOTOR_POSITION;
+    msg.a=m;
+    return send_and_wait(msg).response_int;
 }
 
-// Thread implementation
-template<typename Func>
-Thread::Thread(Func function, bool start_automatically) {
-    _t = std::thread(function);
-    if (start_automatically) start();
+bool BaseRobot::is_motor_done(int m){
+    Message msg{};
+    msg.type = MessageType::IS_MOTOR_DONE;
+    msg.a=m;
+    return send_and_wait(msg).response_bool;
 }
 
-void Thread::start() {
-    if (!_started) _started = true;
+// Analog/Digital
+int BaseRobot::get_analog(int p){
+    Message msg{};
+    msg.type = MessageType::GET_ANALOG;
+    msg.a=p;
+    return send_and_wait(msg).response_int;
 }
 
-void Thread::wait_for_thread() {
-    if (_t.joinable()) _t.join();
+int BaseRobot::get_digital(int p){
+    Message msg{};
+    msg.type = MessageType::GET_DIGITAL;
+    msg.a=p;
+    return send_and_wait(msg).response_int;
 }
 
-void Thread::stop() {
-    if (_t.joinable()) _t.detach();
+void BaseRobot::set_digital(int p,int v){
+    Message msg{};
+    msg.type = MessageType::SET_DIGITAL;
+    msg.a=p; msg.b=v;
+    send_message(msg);
+}
+
+// Gyro
+int BaseRobot::get_gyro_x(){
+    Message msg{}; msg.type=MessageType::GET_GYRO_X;
+    return send_and_wait(msg).response_int;
+}
+int BaseRobot::get_gyro_y(){
+    Message msg{}; msg.type=MessageType::GET_GYRO_Y;
+    return send_and_wait(msg).response_int;
+}
+int BaseRobot::get_gyro_z(){
+    Message msg{}; msg.type=MessageType::GET_GYRO_Z;
+    return send_and_wait(msg).response_int;
+}
+
+// PWM
+int BaseRobot::getpwm(int m){
+    Message msg{}; msg.type=MessageType::GET_PWM; msg.a=m;
+    return send_and_wait(msg).response_int;
+}
+void BaseRobot::setpwm(int m,int v){
+    Message msg{}; msg.type=MessageType::SET_PWM; msg.a=m; msg.b=v;
+    send_message(msg);
 }
 
 } // namespace Nano
