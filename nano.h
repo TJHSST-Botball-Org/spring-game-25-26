@@ -8,9 +8,20 @@ programming to understand this
 docs will help you the rest of the way
 */
 
+/*
+Nano is botball library. extends libkipr, providing wrapper functions and  extra functionality
+thread safe
+
+you gotta be familiar with object oriented programming to an extent, and basic
+programming to understand this 
+
+docs will help you the rest of the way
+*/
+
 #pragma once
 
 #include <kipr/kipr.h>
+#include "shared.h"
 
 
 namespace Nano {
@@ -23,6 +34,7 @@ namespace Nano {
 
             void wait_for_light(int light_sensor_pin);
         	void wait_for_milliseconds(int ms);
+        	void calibrate_gyro();
 
             // Motors
             int get_motor_position_counter(int motor);
@@ -50,7 +62,7 @@ namespace Nano {
             void change_digital_port_mode(int port, bool is_input);
 
             // Gyroscope
-            int get_gyro_x();
+            void get_gyro_x();
             int get_gyro_y();
             int get_gyro_z();
 
