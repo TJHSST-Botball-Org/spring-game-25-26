@@ -12,6 +12,40 @@ void turn_right_90(){
     }
 }
 
+void go_straight(double speed, double duration_sec){
+    double xbias = calibrate_gyroscope();
+    msleep(1000);
+
+    double start_time = seconds();
+    double last_time = start_time;
+    double orientation = 0;
+    double Kp = 0.005;
+
+    while(seconds() - start_time < duration_sec){
+        double current_time = seconds();
+        double dt = current_time - last_time;
+        last_time = current_time;
+
+        double gx = gyro_x() - xbias;
+        orientation += gx * dt;
+
+        double error = -orientation;
+        double correction = Kp * error;
+
+        int left = speed - correction;
+        int right = speed + correction;
+
+        motor(0, left);
+        motor(3, left);
+        motor(1, right);
+        motor(2, right);
+
+        msleep(10);
+    }
+
+    ao();
+}
+
 int main() {
     Nano::start_nano();
     Nano::BaseRobot robot;
