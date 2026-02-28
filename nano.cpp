@@ -4,6 +4,7 @@
 #include <mutex>
 #include <chrono>
 #include <iostream>
+#include "shared.h"
 
 namespace Nano {
 
@@ -13,6 +14,7 @@ namespace Nano {
 
 enum class MessageType {
     WFM,
+    CG,
     
     // Motor
     GET_MOTOR_POSITION,
@@ -78,6 +80,7 @@ struct Message {
 std::queue<Message> request_queue;
 std::queue<Message> response_queue;
 std::mutex message_mutex;
+int g_z_bias = 0;
 
 unsigned int next_message_id = 0;
 bool worker_started = false;
@@ -108,6 +111,20 @@ void worker_thread_function() {
                 // MOTOR
                 case MessageType::SET_MOTOR_POWER:
                     motor(msg.a, msg.b);
+                    break;
+                
+                case MessageType::CG:
+                    {
+                    double gyro_z_sum = 0;
+    				int num_samples = 100;  // Number of samples for averaging
+    				for (int i = 0; i<num_samples; i++){
+        				double gz = gyro_z();  // Read gyroscope data
+        				gyro_z_sum += gz;  // Accumulate gyro z readings
+    				}
+    				double gyro_z_bias = gyro_z_sum / num_samples;  // Calculate bias for gyro z
+					//std::cout << gyro_z_bias;
+    				g_z_bias = gyro_z_bias;
+                    }
                     break;
 
                 case MessageType::FREEZE:
@@ -176,8 +193,26 @@ void worker_thread_function() {
 
                 // GYRO
                 case MessageType::GET_GYRO_X:
-                    msg.response_int = gyro_x();
-                    response_queue.push(msg);
+                    {
+                    double last_time = seconds();  // Store the initial time
+    				//std::cout << last_time;
+    				double o = 0;  // Initialize the orientation to 0
+    				while(true){
+        				//gyro_calibrate();
+        				//float gx = gyro_x();
+        				//float gy = gyro_y();
+        				double gz = gyro_z() - g_z_bias; // Read gyroscope data
+        				double current_time = seconds();  // Get the current time
+        				double delta_time = current_time - last_time;  // Calculate the time difference
+        				//std::cout << delta_time;
+        				o = o + gz * delta_time;  // Update the orientation based on angular velocity
+        				orientation.store(static_cast<double>(o / 8.248)); ; // orientation = o / 8.248
+        				last_time = current_time;  // Update last_time to current time
+        				//std::cout << orientation_deg;  // Output the estimated orientation
+        				//std::cout << "break";
+        				msleep(10); // Sleep 100ms for example to only integrate new gyro values
+    				}
+                    }
                     break;
 
                 case MessageType::GET_GYRO_Y:
@@ -293,6 +328,12 @@ void BaseRobot::wait_for_milliseconds(int ms) {
     msg.a=ms;
     send_message(msg);
 }
+ 
+void BaseRobot::calibrate_gyro(){
+ 	Message msg{};
+    msg.type = MessageType::CG;
+    send_message(msg);  
+}
 
     
 // Motor
@@ -347,9 +388,9 @@ void BaseRobot::set_digital(int p,int v){
 }
 
 // Gyro
-int BaseRobot::get_gyro_x(){
+void BaseRobot::get_gyro_x(){
     Message msg{}; msg.type=MessageType::GET_GYRO_X;
-    return send_and_wait(msg).response_int;
+    send_message(msg);
 }
 int BaseRobot::get_gyro_y(){
     Message msg{}; msg.type=MessageType::GET_GYRO_Y;
@@ -370,4 +411,5 @@ void BaseRobot::setpwm(int m,int v){
     send_message(msg);
 }
 
+} // namespace Nano
 } // namespace Nano
