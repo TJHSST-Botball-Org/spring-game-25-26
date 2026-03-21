@@ -15,7 +15,7 @@ namespace Nano {
 enum class MessageType {
     WFM,
     CG,
-    
+
     // Motor
     GET_MOTOR_POSITION,
     CLEAR_MOTOR_POSITION,
@@ -112,13 +112,13 @@ void worker_thread_function() {
                 case MessageType::SET_MOTOR_POWER:
                     motor(msg.a, msg.b);
                     break;
-                
+
                 case MessageType::CG:
                     {
                     double gyro_z_sum = 0;
     				int num_samples = 100;  // Number of samples for averaging
     				for (int i = 0; i<num_samples; i++){
-        				double gz = gyro_z();  // Read gyroscope data
+        				double gz = gyro_y();  // Read gyroscope data          gyro_z()
         				gyro_z_sum += gz;  // Accumulate gyro z readings
     				}
     				double gyro_z_bias = gyro_z_sum / num_samples;  // Calculate bias for gyro z
@@ -196,12 +196,12 @@ void worker_thread_function() {
                     {
                     double last_time = seconds();  // Store the initial time
     				//std::cout << last_time;
-    				double o = 0;  // Initialize the orientation to 0
+    				double o = 0.0;  // Initialize the orientation to 0
     				while(true){
         				//gyro_calibrate();
         				//float gx = gyro_x();
         				//float gy = gyro_y();
-        				double gz = gyro_z() - g_z_bias; // Read gyroscope data
+        				double gz = gyro_y() - g_z_bias; // Read gyroscope data             gyro_z()
         				double current_time = seconds();  // Get the current time
         				double delta_time = current_time - last_time;  // Calculate the time difference
         				//std::cout << delta_time;
@@ -210,7 +210,7 @@ void worker_thread_function() {
         				last_time = current_time;  // Update last_time to current time
         				//std::cout << orientation_deg;  // Output the estimated orientation
         				//std::cout << "break";
-        				msleep(10); // Sleep 100ms for example to only integrate new gyro values
+        				msleep(10); // before 10     Sleep 100ms for example to only integrate new gyro values
     				}
                     }
                     break;
@@ -328,14 +328,14 @@ void BaseRobot::wait_for_milliseconds(int ms) {
     msg.a=ms;
     send_message(msg);
 }
- 
+
 void BaseRobot::calibrate_gyro(){
  	Message msg{};
     msg.type = MessageType::CG;
-    send_message(msg);  
+    send_message(msg);
 }
 
-    
+
 // Motor
 void BaseRobot::set_motor_power(int m,int p){
     Message msg{};
@@ -411,5 +411,4 @@ void BaseRobot::setpwm(int m,int v){
     send_message(msg);
 }
 
-} // namespace Nano
 } // namespace Nano
