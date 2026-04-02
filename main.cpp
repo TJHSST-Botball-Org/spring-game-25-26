@@ -1,9 +1,32 @@
-#include <kipr/kipr.h>
-#include <nano.h>
-#include <nano2.h>
-#include <nano3.h>
+#include <kipr/wombat.h>
 #include <iostream>
+#include <fstream>
+#include <nano.h>
 #include "shared.h"
+
+const int FRONT_LEFT_PIN = 0;
+const int FRONT_RIGHT_PIN = 3;
+const int BACK_LEFT_PIN = 1;
+const int BACK_RIGHT_PIN = 2;
+
+const int PVC_ARM = 1;
+const int PVC_WRIST = 0;
+
+const int PVC_ARM_DROP_VALUE = 1231;
+const int armDropTemp = 1499;
+const int wristDropTemp = 975;
+
+const int PVC_ARM_RAISE_VALUE = 1231;
+const int PVC_ARM_LOWER_VALUE = 2047; // TENTATIVE, WE DONT HAVE WHEELS YET SO THIS COULD CHANGE
+const int PVC_ARM_STOW_VALUE = 413;  // TENTATIVE, WE DONT HAVE WHEELS YET SO THIS COULD CHANGE
+const int PVC_WRIST_DROP_VALUE = 670;
+const int PVC_WRIST_PICKUP_VALUE = 2047;
+
+const int TOPHAT_FRONT_LEFT = 5;
+const int TOPHAT_FRONT_RIGHT = 4;
+
+const int TOPHAT_FRONT_LEFT_THRESHOLD = 3900;
+const int TOPHAT_FRONT_RIGHT_THRESHOLD = 3900;
 
 std::atomic<double> orientation(0);
 std::atomic<double> pix(0);
@@ -60,55 +83,38 @@ void go_straight(double speed, double duration_sec){
     ao();
 }
 
+void go_sideways(double speed, double duration_sec) {
+    double start_time = seconds();
+    double last_time = start_time;
+    double Kp = 1.09;
+    double gx = orientation;  // Lock in starting orientation
+    
+    while (seconds() - start_time < duration_sec) {
+        std::cout << orientation << std::endl;
+        double current_time = seconds();
+        double dt = current_time - last_time;
+        last_time = current_time;
+        
+        double error = orientation - gx;  // How far we've drifted
+        double correction = Kp * error;
+        
+        // Flipped correction signs
+        motor(0, speed - correction);   // front-left
+        motor(1, -speed - correction);  // back-left
+        motor(2, speed + correction);   // back-right
+        motor(3, -speed + correction);  // front-right
+        
+        msleep(10);
+    }
+    ao();
+}
+
 double max(double a, double b){
     if (a>b){
         return a;
     }
     return b;
 }
-
-/*
-void turn(int amount){
-    double init_o = orientation.load();
-    double target = init_o + amount;
-    double last_o = init_o;
-
-    double Kp = 1.0;
-    double Kd = 1;  // start here, tune up if still overshooting
-
-    while(true){
-        double current = orientation.load();
-        double error = target - current;
-
-        // Exit condition
-        if (amount > 0 && error <= 1.0) break;
-        if (amount < 0 && error >= -1.0) break;
-
-        // Derivative = how fast orientation is changing
-        double derivative = (current - last_o) / 0.01;
-
-        // PD control
-        double speed = error * Kp - derivative * Kd;
-
-        // Clamp
-        if (speed > 50) speed = 50;
-        if (speed < -50) speed = -50;
-
-        std::cout << "err: " << error << " deriv: " << derivative << " spd: " << speed << std::endl;
-
-        motor(0, speed);
-        motor(1, speed);
-        motor(2, -speed);
-        motor(3, -speed);
-
-        last_o = current;
-        msleep(10);
-    }
-    ao();
-}
-*/
-
-
 void turn(int amount){
     if(amount < 0){
         double init_o = orientation;
@@ -143,124 +149,65 @@ void turn(int amount){
     ao();
 }
 
-void straight(int inches) {
-    std::cout << "STRAIGHT METHOD STARTED" << std::endl;
-    if (inches < 0) {
-        // Backward
-        double init_pos = pix;  // Your atomic/global position variable
-        double speed;
-        while (pix > init_pos + inches) {  // inches is negative, so we're decreasing
-            speed = (init_pos + inches) - pix;
-            speed = max(speed, 50);
-            std::cout << pix << std::endl;
-            // All motors same direction for straight (backward)
-            motor(0, -speed);
-            motor(1, -speed);
-            motor(2, -speed);
-            motor(3, -speed);
-            msleep(10);
-        }
-        ao();
-    }
-    else {
-        // Forward
-        double init_pos = pix;
-        double speed;
-        while (pix < init_pos + inches) {
-            speed = -1 * ((init_pos + inches) - pix);
-            speed = max(speed, 50);
-            std::cout << pix << std::endl;
-            // All motors same direction for straight (forward)
-            motor(0, -speed);
-            motor(1, -speed);
-            motor(2, -speed);
-            motor(3, -speed);
-            msleep(10);
-        }
-        ao();
-    }
-    ao();
+void stop()
+{
+    freeze(FRONT_LEFT_PIN);
+    freeze(FRONT_RIGHT_PIN);
+    freeze(BACK_LEFT_PIN);
+    freeze(BACK_RIGHT_PIN);
+    msleep(100);
 }
 
+void slowly_set_servo_position(int pin, int position, int wait_delay_ms = 10)
+{
+    int initial_pos = get_servo_position(pin);
 
-int main() {
+    while (initial_pos > position ? get_servo_position(pin) > position : get_servo_position(pin) < position)
+    {
+        set_servo_position(pin, get_servo_position(pin) + (initial_pos > position ? -10 : 10));
+        msleep(wait_delay_ms);
+    }
+}
 
+void turn_wrist_drop()
+{
+    enable_servo(PVC_WRIST);
+    slowly_set_servo_position(PVC_WRIST, PVC_WRIST_DROP_VALUE);
+    disable_servo(PVC_WRIST);
+}
 
+void turn_wrist_pickup()
+{
+    enable_servo(PVC_WRIST);
+    slowly_set_servo_position(PVC_WRIST, PVC_WRIST_PICKUP_VALUE);
+    disable_servo(PVC_WRIST);
+}
 
+void set_arm_up()
+{
+    enable_servo(PVC_ARM);
+    slowly_set_servo_position(PVC_ARM, PVC_ARM_RAISE_VALUE);
+    disable_servo(PVC_ARM);
+}
 
+void set_arm_down()
+{
+    enable_servo(PVC_ARM);
+    slowly_set_servo_position(PVC_ARM, PVC_ARM_LOWER_VALUE);
+    disable_servo(PVC_ARM);
+}
 
-
-    /*const int armDropTemp = 1499;
-//const int wristDropTemp = 975;
-    enable_servo(0);
-    set_servo_position(0, 975);
-    enable_servo(1);
-    set_servo_position(1, 1499);
-    msleep(10000);
-    return(0);
-    */
-
-
-    //SO COPY NANO INTO A NEW FILE AND CLASS AND MAKE ONE RUN GYRO, ONE RUN ACCEL TO AVOID THE WHILE TRUE ISSUE
-
+int main()
+{
+    set_arm_up();
+    turn_wrist_drop();
+    //set_arm_down();
+    return 0;
     Nano::BaseRobot gyro_bot;       // Starts Nano
-    Nano2::BaseRobot accel_x_bot;   // Starts Nano2
-    Nano3::BaseRobot accel_y_bot;   // Starts Nano3
 
     std::cout << "Robot created!" << std::endl;
-
-    //gyro_bot.calibrate_gyro();
-    accel_x_bot.calibrate_accel_x();
-
-    // go_straight(50,10);
-
-    msleep(1000);
-    //msleep(10000);
-    /*  for(int i = 0; i < 200; i++){
-    std::cout << "pix: " << pix << std::endl;
-    msleep(10);
-}*/
-
-    //gyro_bot.get_gyro_x();
-
-    accel_x_bot.get_accel_x();
-    //  std::cout << "Driving straight...\n";
-    //while(true){
-    //	std::cout<< orientation << std::endl;  
-    //    msleep(50);
-    //}
-    //turn(180);
-    //msleep(10);
-    straight(5);
-
-
-    //robot.calibrate_gyro();
-    // msleep(1000);
-    // robot.get_gyro_x();
-    // turn(90);
-
-
-    //go_straight(50, 15);  // use seconds
-    //motor(0, 50);
-    //motor(1, 50);
-    //motor(3, 50);
-    //motor(2, 50);
-    // msleep(5000); //500
-    return 0;
-    //turn_right_90();
-    //while(true){
-    //	std::cout << orientation << std::endl; 
-    //msleep(10);
-    //}
-    // Move motor 0
-    //robot.set_motor_power(0, 100);
-    //robot.set_motor_power(1, 100);
-    //msleep(1000);
-    //robot.wait_for_milliseconds(1000);
-    //robot.set_motor_power(0, 0);
-    //msleep(10000);
-
-    std::cout << "Done!" << std::endl;
-
-    return 0;
+    gyro_bot.calibrate_gyro();
+	msleep(1000);
+    gyro_bot.get_gyro_x();
+    go_sideways(50, 15);
 }
