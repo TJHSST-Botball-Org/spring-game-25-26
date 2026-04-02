@@ -295,18 +295,21 @@ int main()
     turn_wrist_pickup();
 
     //getting pvcs
-    move_forward_for_distance(1.0);     //temp val
+    turn_right_90_deg();
+    turn_right_90_deg();
+    move_backward_for_distance(1.0);     //temp val
     set_arm_down();
     turn_wrist_pickup();
 
     //lining up for dropping pvcs
-    turn_right_90_deg();
-    turn_right_90_deg();
     move_forward_for_distance(1.0); //temp val
+    turn_right_90_deg();
+    turn_right_90_deg();
     line_up_with_black_line_front();
-    move_forward_for_distance(1.0); //temp val
+    move_backward_for_distance(1.0); //temp val
 
     //dropping pvcs
+
     set_arm_up();
     turn_wrist_drop();
 
