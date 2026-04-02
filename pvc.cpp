@@ -146,104 +146,134 @@ void turn_counter_clockwise_continuous()
     robot->move_at_velocity(BACK_RIGHT_PIN, 750 * BACK_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER);
 }
 
-// Kp for heading correction while driving straight. Tune on robot.
-const double STRAIGHT_Kp = 5.0;
-// Kp and minimum speed for gyro-based turns. Tune on robot.
-const double TURN_Kp = 15.0;
-const double TURN_MIN_SPEED = 150.0;
+double max(double a, double b)
+{
+    if (a > b) return a;
+    return b;
+}
+
+void turn(int amount)
+{
+    if (amount < 0)
+    {
+        double init_o = orientation;
+        double speed;
+        while (orientation > init_o + amount)
+        {
+            speed = orientation - (init_o + amount);
+            speed = max(speed, 5);
+            motor(FRONT_LEFT_PIN,  -speed);
+            motor(BACK_LEFT_PIN,   -speed);
+            motor(FRONT_RIGHT_PIN,  speed);
+            motor(BACK_RIGHT_PIN,   speed);
+            msleep(10);
+        }
+        ao();
+    }
+    else
+    {
+        double init_o = orientation;
+        double speed;
+        while (orientation < init_o + amount)
+        {
+            speed = -1 * (orientation - (init_o + amount));
+            speed = max(speed, 5);
+            motor(FRONT_LEFT_PIN,   speed);
+            motor(BACK_LEFT_PIN,    speed);
+            motor(FRONT_RIGHT_PIN, -speed);
+            motor(BACK_RIGHT_PIN,  -speed);
+            msleep(10);
+        }
+        ao();
+    }
+    ao();
+}
 
 void turn_left_90_deg()
 {
-    double init_o = orientation;
-    double target = init_o - 90.0;
-
-    while (orientation > target)
-    {
-        double remaining = orientation - target;
-        double speed = remaining * TURN_Kp;
-        if (speed < TURN_MIN_SPEED) speed = TURN_MIN_SPEED;
-
-        robot->move_at_velocity(FRONT_LEFT_PIN,  (int)(-speed * FRONT_LEFT_MULTIPLIER  * GLOBAL_MULTIPLIER));
-        robot->move_at_velocity(FRONT_RIGHT_PIN, (int)( speed * FRONT_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER));
-        robot->move_at_velocity(BACK_LEFT_PIN,   (int)(-speed * BACK_LEFT_MULTIPLIER   * GLOBAL_MULTIPLIER));
-        robot->move_at_velocity(BACK_RIGHT_PIN,  (int)( speed * BACK_RIGHT_MULTIPLIER  * GLOBAL_MULTIPLIER));
-        robot->wait_for_milliseconds(10);
-    }
-    stop();
+    turn(-90);
 }
 
 void turn_right_90_deg()
 {
-    double init_o = orientation;
-    double target = init_o + 90.0;
+    turn(90);
+}
 
-    while (orientation < target)
+void go_straight(double speed, double duration_sec)
+{
+    double start_time = seconds();
+    double last_time = start_time;
+    double Kp = 1.09;
+    double gx = orientation;
+
+    while (seconds() - start_time < duration_sec)
     {
-        double remaining = target - orientation;
-        double speed = remaining * TURN_Kp;
-        if (speed < TURN_MIN_SPEED) speed = TURN_MIN_SPEED;
+        double current_time = seconds();
+        last_time = current_time;
 
-        robot->move_at_velocity(FRONT_LEFT_PIN,  (int)( speed * FRONT_LEFT_MULTIPLIER  * GLOBAL_MULTIPLIER));
-        robot->move_at_velocity(FRONT_RIGHT_PIN, (int)(-speed * FRONT_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER));
-        robot->move_at_velocity(BACK_LEFT_PIN,   (int)( speed * BACK_LEFT_MULTIPLIER   * GLOBAL_MULTIPLIER));
-        robot->move_at_velocity(BACK_RIGHT_PIN,  (int)(-speed * BACK_RIGHT_MULTIPLIER  * GLOBAL_MULTIPLIER));
-        robot->wait_for_milliseconds(10);
+        double error = orientation; // matches tested main.cpp behavior
+        double correction = Kp * error;
+
+        int left  = speed - correction;
+        int right = speed + correction;
+
+        motor(FRONT_LEFT_PIN,  left);
+        motor(BACK_LEFT_PIN,   left);
+        motor(FRONT_RIGHT_PIN, right);
+        motor(BACK_RIGHT_PIN,  right);
+
+        msleep(10);
     }
-    stop();
+    ao();
+}
+
+void go_sideways(double speed, double duration_sec)
+{
+    double start_time = seconds();
+    double last_time = start_time;
+    double Kp = 1.09;
+    double gx = orientation;
+
+    while (seconds() - start_time < duration_sec)
+    {
+        double current_time = seconds();
+        last_time = current_time;
+
+        double error = orientation - gx;
+        double correction = Kp * error;
+
+        motor(FRONT_LEFT_PIN,   speed - correction);
+        motor(BACK_LEFT_PIN,   -speed - correction);
+        motor(BACK_RIGHT_PIN,   speed + correction);
+        motor(FRONT_RIGHT_PIN, -speed + correction);
+
+        msleep(10);
+    }
+    ao();
 }
 
 void move_forward_for_distance(float distance)
 {
-    double start_time = seconds();
     double duration_sec = (MOVE_FORWARD_FOR_DISTANCE_CONSTANT * distance) / 1000.0;
-    double heading = orientation; // lock in starting heading
-
-    while (seconds() - start_time < duration_sec)
-    {
-        double error = orientation - heading;
-        double correction = STRAIGHT_Kp * error;
-
-        robot->move_at_velocity(FRONT_LEFT_PIN,  (int)(750 * FRONT_LEFT_MULTIPLIER  * GLOBAL_MULTIPLIER - correction));
-        robot->move_at_velocity(FRONT_RIGHT_PIN, (int)(750 * FRONT_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER + correction));
-        robot->move_at_velocity(BACK_LEFT_PIN,   (int)(750 * BACK_LEFT_MULTIPLIER   * GLOBAL_MULTIPLIER - correction));
-        robot->move_at_velocity(BACK_RIGHT_PIN,  (int)(750 * BACK_RIGHT_MULTIPLIER  * GLOBAL_MULTIPLIER + correction));
-        robot->wait_for_milliseconds(10);
-    }
-    stop();
+    go_straight(100, duration_sec);
 }
 
 void move_backward_for_distance(float distance)
 {
-    double start_time = seconds();
     double duration_sec = (MOVE_FORWARD_FOR_DISTANCE_CONSTANT * distance) / 1000.0;
-    double heading = orientation;
-
-    while (seconds() - start_time < duration_sec)
-    {
-        double error = orientation - heading;
-        double correction = STRAIGHT_Kp * error;
-
-        robot->move_at_velocity(FRONT_LEFT_PIN,  (int)(-750 * FRONT_LEFT_MULTIPLIER  * GLOBAL_MULTIPLIER - correction));
-        robot->move_at_velocity(FRONT_RIGHT_PIN, (int)(-750 * FRONT_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER + correction));
-        robot->move_at_velocity(BACK_LEFT_PIN,   (int)(-750 * BACK_LEFT_MULTIPLIER   * GLOBAL_MULTIPLIER - correction));
-        robot->move_at_velocity(BACK_RIGHT_PIN,  (int)(-750 * BACK_RIGHT_MULTIPLIER  * GLOBAL_MULTIPLIER + correction));
-        robot->wait_for_milliseconds(10);
-    }
-    stop();
+    go_straight(-100, duration_sec);
 }
 
 void move_left_for_distance(float distance)
 {
-    move_left();
-    robot->wait_for_milliseconds(MOVE_LEFT_FOR_DISTANCE_CONSTANT * distance);
-    stop();
+    double duration_sec = (MOVE_LEFT_FOR_DISTANCE_CONSTANT * distance) / 1000.0;
+    go_sideways(-100, duration_sec);
 }
 
 void move_right_for_distance(float distance)
 {
-    move_right();
-    robot->wait_for_milliseconds(MOVE_RIGHT_FOR_DISTANCE_CONSTANT * distance);
-    stop();
+    double duration_sec = (MOVE_RIGHT_FOR_DISTANCE_CONSTANT * distance) / 1000.0;
+    go_sideways(100, duration_sec);
 }
 
 void slowly_set_servo_position(int pin, int position, int wait_delay_ms = 10)
