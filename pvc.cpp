@@ -152,15 +152,15 @@ double max(double a, double b)
     return b;
 }
 
-void turn(int amount)
+void turn(int degrees)
 {
-    if (amount < 0)
+    if (degrees < 0)
     {
         double init_o = orientation;
         double speed;
-        while (orientation > init_o + amount)
+        while (orientation > init_o + degrees)
         {
-            speed = orientation - (init_o + amount);
+            speed = orientation - (init_o + degrees);
             speed = max(speed, 5);
             motor(FRONT_LEFT_PIN,  -speed);
             motor(BACK_LEFT_PIN,   -speed);
@@ -395,18 +395,18 @@ int main()
     turn_wrist_pickup();
 
     //getting pvcs
-    turn_right_90_deg();
-    turn_right_90_deg();
-    move_backward_for_distance(1.0);     //temp val
+    turn(90);
+    turn(90);
+    go_straight(-1.0, 1.0);     //temp val
     set_arm_down();
     turn_wrist_pickup();
 
-    //lining up for dropping pvcs
-    move_forward_for_distance(1.0); //temp val
-    turn_right_90_deg();
-    turn_right_90_deg();
+    //lining z for dropping pvcs
+    go_straight(1.0, 1.0);     //temp val
+    turn(90);
+    turn(90);
     line_up_with_black_line_front();
-    move_backward_for_distance(1.0); //temp val
+    go_straight(-1.0, 1.0);     //temp val
 
     //dropping pvcs
 
