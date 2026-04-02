@@ -1,6 +1,16 @@
 #include "nano.h"
+#include "shared.h"
 #include <iostream>
 #include <fstream>
+
+// Definitions for shared gyro/accel state declared in shared.h
+std::atomic<double> orientation(0);
+std::atomic<double> pix(0);
+std::atomic<double> piy(0);
+std::atomic<double> piz(0);
+std::atomic<bool> nr(true);
+std::atomic<bool> nr2(true);
+std::atomic<bool> nr3(true);
 
 const int FRONT_LEFT_PIN = 0;
 const int FRONT_RIGHT_PIN = 3;
@@ -136,31 +146,89 @@ void turn_counter_clockwise_continuous()
     robot->move_at_velocity(BACK_RIGHT_PIN, 750 * BACK_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER);
 }
 
+// Kp for heading correction while driving straight. Tune on robot.
+const double STRAIGHT_Kp = 5.0;
+// Kp and minimum speed for gyro-based turns. Tune on robot.
+const double TURN_Kp = 15.0;
+const double TURN_MIN_SPEED = 150.0;
+
 void turn_left_90_deg()
 {
-    turn_counter_clockwise_continuous();
-    robot->wait_for_milliseconds(LEFT_NINETY_DEGREE_WAIT_MS);
+    double init_o = orientation;
+    double target = init_o - 90.0;
+
+    while (orientation > target)
+    {
+        double remaining = orientation - target;
+        double speed = remaining * TURN_Kp;
+        if (speed < TURN_MIN_SPEED) speed = TURN_MIN_SPEED;
+
+        robot->move_at_velocity(FRONT_LEFT_PIN,  (int)(-speed * FRONT_LEFT_MULTIPLIER  * GLOBAL_MULTIPLIER));
+        robot->move_at_velocity(FRONT_RIGHT_PIN, (int)( speed * FRONT_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER));
+        robot->move_at_velocity(BACK_LEFT_PIN,   (int)(-speed * BACK_LEFT_MULTIPLIER   * GLOBAL_MULTIPLIER));
+        robot->move_at_velocity(BACK_RIGHT_PIN,  (int)( speed * BACK_RIGHT_MULTIPLIER  * GLOBAL_MULTIPLIER));
+        robot->wait_for_milliseconds(10);
+    }
     stop();
 }
 
 void turn_right_90_deg()
 {
-    turn_clockwise_continuous();
-    robot->wait_for_milliseconds(RIGHT_NINETY_DEGREE_WAIT_MS);
+    double init_o = orientation;
+    double target = init_o + 90.0;
+
+    while (orientation < target)
+    {
+        double remaining = target - orientation;
+        double speed = remaining * TURN_Kp;
+        if (speed < TURN_MIN_SPEED) speed = TURN_MIN_SPEED;
+
+        robot->move_at_velocity(FRONT_LEFT_PIN,  (int)( speed * FRONT_LEFT_MULTIPLIER  * GLOBAL_MULTIPLIER));
+        robot->move_at_velocity(FRONT_RIGHT_PIN, (int)(-speed * FRONT_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER));
+        robot->move_at_velocity(BACK_LEFT_PIN,   (int)( speed * BACK_LEFT_MULTIPLIER   * GLOBAL_MULTIPLIER));
+        robot->move_at_velocity(BACK_RIGHT_PIN,  (int)(-speed * BACK_RIGHT_MULTIPLIER  * GLOBAL_MULTIPLIER));
+        robot->wait_for_milliseconds(10);
+    }
     stop();
 }
 
 void move_forward_for_distance(float distance)
 {
-    move_forward();
-    robot->wait_for_milliseconds(MOVE_FORWARD_FOR_DISTANCE_CONSTANT * distance);
+    double start_time = seconds();
+    double duration_sec = (MOVE_FORWARD_FOR_DISTANCE_CONSTANT * distance) / 1000.0;
+    double heading = orientation; // lock in starting heading
+
+    while (seconds() - start_time < duration_sec)
+    {
+        double error = orientation - heading;
+        double correction = STRAIGHT_Kp * error;
+
+        robot->move_at_velocity(FRONT_LEFT_PIN,  (int)(750 * FRONT_LEFT_MULTIPLIER  * GLOBAL_MULTIPLIER - correction));
+        robot->move_at_velocity(FRONT_RIGHT_PIN, (int)(750 * FRONT_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER + correction));
+        robot->move_at_velocity(BACK_LEFT_PIN,   (int)(750 * BACK_LEFT_MULTIPLIER   * GLOBAL_MULTIPLIER - correction));
+        robot->move_at_velocity(BACK_RIGHT_PIN,  (int)(750 * BACK_RIGHT_MULTIPLIER  * GLOBAL_MULTIPLIER + correction));
+        robot->wait_for_milliseconds(10);
+    }
     stop();
 }
 
 void move_backward_for_distance(float distance)
 {
-    move_backward();
-    robot->wait_for_milliseconds(MOVE_FORWARD_FOR_DISTANCE_CONSTANT * distance);
+    double start_time = seconds();
+    double duration_sec = (MOVE_FORWARD_FOR_DISTANCE_CONSTANT * distance) / 1000.0;
+    double heading = orientation;
+
+    while (seconds() - start_time < duration_sec)
+    {
+        double error = orientation - heading;
+        double correction = STRAIGHT_Kp * error;
+
+        robot->move_at_velocity(FRONT_LEFT_PIN,  (int)(-750 * FRONT_LEFT_MULTIPLIER  * GLOBAL_MULTIPLIER - correction));
+        robot->move_at_velocity(FRONT_RIGHT_PIN, (int)(-750 * FRONT_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER + correction));
+        robot->move_at_velocity(BACK_LEFT_PIN,   (int)(-750 * BACK_LEFT_MULTIPLIER   * GLOBAL_MULTIPLIER - correction));
+        robot->move_at_velocity(BACK_RIGHT_PIN,  (int)(-750 * BACK_RIGHT_MULTIPLIER  * GLOBAL_MULTIPLIER + correction));
+        robot->wait_for_milliseconds(10);
+    }
     stop();
 }
 
@@ -289,6 +357,8 @@ int main()
 {
     Nano::BaseRobot r;
     robot = &r;
+    robot->calibrate_gyro();
+    robot->wait_for_milliseconds(1000); // let gyro settle
 
     //start positions
     set_arm_up();
