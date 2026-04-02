@@ -152,36 +152,33 @@ double max(double a, double b)
     return b;
 }
 
-void turn(int degrees)
-{
-    if (degrees < 0)
-    {
+void turn(int amount){
+    if(amount < 0){
         double init_o = orientation;
         double speed;
-        while (orientation > init_o + degrees)
-        {
-            speed = orientation - (init_o + degrees);
+        while(orientation > init_o + amount){ //+10
+            speed = orientation - (init_o + amount);
             speed = max(speed, 5);
-            motor(FRONT_LEFT_PIN,  -speed);
-            motor(BACK_LEFT_PIN,   -speed);
-            motor(FRONT_RIGHT_PIN,  speed);
-            motor(BACK_RIGHT_PIN,   speed);
+            std::cout<< orientation << std::endl;
+            motor(0, -speed);
+            motor(1, -speed);
+            motor(3, speed);
+            motor(2, speed);
             msleep(10);
         }
         ao();
     }
-    else
-    {
+    else{
         double init_o = orientation;
         double speed;
-        while (orientation < init_o + amount)
-        {
+        while(orientation < init_o + amount){ //-10
             speed = -1 * (orientation - (init_o + amount));
             speed = max(speed, 5);
-            motor(FRONT_LEFT_PIN,   speed);
-            motor(BACK_LEFT_PIN,    speed);
-            motor(FRONT_RIGHT_PIN, -speed);
-            motor(BACK_RIGHT_PIN,  -speed);
+            std::cout<< orientation << std::endl;
+            motor(0, speed);
+            motor(1, speed);
+            motor(3, -speed);
+            motor(2, -speed);
             msleep(10);
         }
         ao();
@@ -194,58 +191,69 @@ void turn_left_90_deg()
     turn(-90);
 }
 
-void turn_right_90_deg()
-{
-    turn(90);
+void turn_right_90(){
+    double o = orientation;
+    while((orientation-o)<90){
+        std::cout << std::to_string(orientation) + " - turning right" <<std::endl;
+    }
 }
 
-void go_straight(double speed, double duration_sec)
-{
+void go_straight(double speed, double duration_sec){
+    //double xbias = calibrate_gyroscope();
+    //msleep(1000);
+
     double start_time = seconds();
     double last_time = start_time;
-    double Kp = 1.09;
+    //double orientation = 0;
+    double oo = 0;
+    double Kp = 1.09; //0.005    0.5
     double gx = orientation;
 
-    while (seconds() - start_time < duration_sec)
-    {
+    while(seconds() - start_time < duration_sec){
+        std::cout<< orientation << std::endl;
         double current_time = seconds();
+        double dt = current_time - last_time;
         last_time = current_time;
 
-        double error = orientation; // matches tested main.cpp behavior
+        //double gx = orientation;
+        oo = orientation - gx;
+
+        double error = orientation; // 0 :(
         double correction = Kp * error;
 
-        int left  = speed - correction;
+        int left = speed - correction;
         int right = speed + correction;
 
-        motor(FRONT_LEFT_PIN,  left);
-        motor(BACK_LEFT_PIN,   left);
-        motor(FRONT_RIGHT_PIN, right);
-        motor(BACK_RIGHT_PIN,  right);
+        motor(0, left);
+        motor(1, left);
+        motor(3, right);
+        motor(2, right);
 
         msleep(10);
     }
     ao();
 }
 
-void go_sideways(double speed, double duration_sec)
-{
+void go_sideways(double speed, double duration_sec) {
     double start_time = seconds();
     double last_time = start_time;
     double Kp = 1.09;
-    double gx = orientation;
+    double gx = orientation;  // Lock in starting orientation
 
-    while (seconds() - start_time < duration_sec)
-    {
+    while (seconds() - start_time < duration_sec) {
+        std::cout << orientation << std::endl;
         double current_time = seconds();
+        double dt = current_time - last_time;
         last_time = current_time;
 
-        double error = orientation - gx;
+        double error = orientation - gx;  // How far we've drifted
         double correction = Kp * error;
 
-        motor(FRONT_LEFT_PIN,   speed - correction);
-        motor(BACK_LEFT_PIN,   -speed - correction);
-        motor(BACK_RIGHT_PIN,   speed + correction);
-        motor(FRONT_RIGHT_PIN, -speed + correction);
+        // Flipped correction signs
+        motor(0, speed - correction);   // front-left
+        motor(1, -speed - correction);  // back-left
+        motor(2, speed + correction);   // back-right
+        motor(3, -speed + correction);  // front-right
 
         msleep(10);
     }
