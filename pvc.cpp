@@ -1,4 +1,4 @@
-#include <kipr/wombat.h>
+#include "nano.h"
 #include <iostream>
 #include <fstream>
 
@@ -20,9 +20,9 @@ const int PVC_ARM_DROP_VALUE = 1472;
 const int armDropTemp = 1499;
 const int wristDropTemp = 975;
 
-
 const int PVC_ARM_LOWER_VALUE = 413; // TENTATIVE, WE DONT HAVE WHEELS YET SO THIS COULD CHANGE
 const int PVC_ARM_STOW_VALUE = 413;  // TENTATIVE, WE DONT HAVE WHEELS YET SO THIS COULD CHANGE
+const int PVC_ARM_RAISE_VALUE = 1231; //temp
 const int PVC_WRIST_DROP_VALUE = 1030;
 const int PVC_WRIST_PICKUP_VALUE = 305;
 
@@ -45,194 +45,198 @@ const int MOVE_FORWARD_FOR_DISTANCE_CONSTANT = 173;        // Adjust based on te
 const int MOVE_LEFT_FOR_DISTANCE_CONSTANT = 183.41463394;  // Adjust based on testing
 const int MOVE_RIGHT_FOR_DISTANCE_CONSTANT = 183.41463394; // Adjust based on testing
 
+Nano::BaseRobot* robot = nullptr;
+
 void stop()
 {
-    freeze(FRONT_LEFT_PIN);
-    freeze(FRONT_RIGHT_PIN);
-    freeze(BACK_LEFT_PIN);
-    freeze(BACK_RIGHT_PIN);
-    msleep(100);
+    robot->freeze(FRONT_LEFT_PIN);
+    robot->freeze(FRONT_RIGHT_PIN);
+    robot->freeze(BACK_LEFT_PIN);
+    robot->freeze(BACK_RIGHT_PIN);
+    robot->wait_for_milliseconds(100);
 }
 
 void move_forward()
 {
-    move_at_velocity(FRONT_LEFT_PIN, 750 * FRONT_LEFT_MULTIPLIER * GLOBAL_MULTIPLIER);
-    move_at_velocity(FRONT_RIGHT_PIN, 750 * FRONT_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER);
-    move_at_velocity(BACK_LEFT_PIN, 750 * BACK_LEFT_MULTIPLIER * GLOBAL_MULTIPLIER);
-    move_at_velocity(BACK_RIGHT_PIN, 750 * BACK_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER);
+    robot->move_at_velocity(FRONT_LEFT_PIN, 750 * FRONT_LEFT_MULTIPLIER * GLOBAL_MULTIPLIER);
+    robot->move_at_velocity(FRONT_RIGHT_PIN, 750 * FRONT_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER);
+    robot->move_at_velocity(BACK_LEFT_PIN, 750 * BACK_LEFT_MULTIPLIER * GLOBAL_MULTIPLIER);
+    robot->move_at_velocity(BACK_RIGHT_PIN, 750 * BACK_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER);
 }
 
 void move_backward()
 {
-    move_at_velocity(FRONT_LEFT_PIN, -750 * FRONT_LEFT_MULTIPLIER * GLOBAL_MULTIPLIER);
-    move_at_velocity(FRONT_RIGHT_PIN, -750 * FRONT_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER);
-    move_at_velocity(BACK_LEFT_PIN, -750 * BACK_LEFT_MULTIPLIER * GLOBAL_MULTIPLIER);
-    move_at_velocity(BACK_RIGHT_PIN, -750 * BACK_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER);
+    robot->move_at_velocity(FRONT_LEFT_PIN, -750 * FRONT_LEFT_MULTIPLIER * GLOBAL_MULTIPLIER);
+    robot->move_at_velocity(FRONT_RIGHT_PIN, -750 * FRONT_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER);
+    robot->move_at_velocity(BACK_LEFT_PIN, -750 * BACK_LEFT_MULTIPLIER * GLOBAL_MULTIPLIER);
+    robot->move_at_velocity(BACK_RIGHT_PIN, -750 * BACK_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER);
 }
 
 void move_left()
 {
-    move_at_velocity(FRONT_LEFT_PIN, -750 * FRONT_LEFT_MULTIPLIER * GLOBAL_MULTIPLIER);
-    move_at_velocity(FRONT_RIGHT_PIN, 750 * FRONT_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER);
-    move_at_velocity(BACK_LEFT_PIN, 750 * BACK_LEFT_MULTIPLIER * GLOBAL_MULTIPLIER);
-    move_at_velocity(BACK_RIGHT_PIN, -750 * BACK_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER);
+    robot->move_at_velocity(FRONT_LEFT_PIN, -750 * FRONT_LEFT_MULTIPLIER * GLOBAL_MULTIPLIER);
+    robot->move_at_velocity(FRONT_RIGHT_PIN, 750 * FRONT_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER);
+    robot->move_at_velocity(BACK_LEFT_PIN, 750 * BACK_LEFT_MULTIPLIER * GLOBAL_MULTIPLIER);
+    robot->move_at_velocity(BACK_RIGHT_PIN, -750 * BACK_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER);
 }
 
 void move_right()
 {
-    move_at_velocity(FRONT_LEFT_PIN, 750 * FRONT_LEFT_MULTIPLIER * GLOBAL_MULTIPLIER);
-    move_at_velocity(FRONT_RIGHT_PIN, -750 * FRONT_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER);
-    move_at_velocity(BACK_LEFT_PIN, -750 * BACK_LEFT_MULTIPLIER * GLOBAL_MULTIPLIER);
-    move_at_velocity(BACK_RIGHT_PIN, 750 * BACK_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER);
+    robot->move_at_velocity(FRONT_LEFT_PIN, 750 * FRONT_LEFT_MULTIPLIER * GLOBAL_MULTIPLIER);
+    robot->move_at_velocity(FRONT_RIGHT_PIN, -750 * FRONT_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER);
+    robot->move_at_velocity(BACK_LEFT_PIN, -750 * BACK_LEFT_MULTIPLIER * GLOBAL_MULTIPLIER);
+    robot->move_at_velocity(BACK_RIGHT_PIN, 750 * BACK_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER);
 }
 
 void move_diagonal_forward_left()
 {
-    move_at_velocity(FRONT_LEFT_PIN, 0 * FRONT_LEFT_MULTIPLIER * GLOBAL_MULTIPLIER);
-    move_at_velocity(FRONT_RIGHT_PIN, 750 * FRONT_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER);
-    move_at_velocity(BACK_LEFT_PIN, 750 * BACK_LEFT_MULTIPLIER * GLOBAL_MULTIPLIER);
-    move_at_velocity(BACK_RIGHT_PIN, 0 * BACK_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER);
+    robot->move_at_velocity(FRONT_LEFT_PIN, 0);
+    robot->move_at_velocity(FRONT_RIGHT_PIN, 750 * FRONT_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER);
+    robot->move_at_velocity(BACK_LEFT_PIN, 750 * BACK_LEFT_MULTIPLIER * GLOBAL_MULTIPLIER);
+    robot->move_at_velocity(BACK_RIGHT_PIN, 0);
 }
 
 void move_diagonal_forward_right()
 {
-    move_at_velocity(FRONT_LEFT_PIN, 750 * FRONT_LEFT_MULTIPLIER * GLOBAL_MULTIPLIER);
-    move_at_velocity(FRONT_RIGHT_PIN, 0 * FRONT_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER);
-    move_at_velocity(BACK_LEFT_PIN, 0 * BACK_LEFT_MULTIPLIER * GLOBAL_MULTIPLIER);
-    move_at_velocity(BACK_RIGHT_PIN, 750 * BACK_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER);
+    robot->move_at_velocity(FRONT_LEFT_PIN, 750 * FRONT_LEFT_MULTIPLIER * GLOBAL_MULTIPLIER);
+    robot->move_at_velocity(FRONT_RIGHT_PIN, 0);
+    robot->move_at_velocity(BACK_LEFT_PIN, 0);
+    robot->move_at_velocity(BACK_RIGHT_PIN, 750 * BACK_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER);
 }
 
 void move_diagonal_backward_left()
 {
-    move_at_velocity(FRONT_LEFT_PIN, -750 * FRONT_LEFT_MULTIPLIER * GLOBAL_MULTIPLIER);
-    move_at_velocity(FRONT_RIGHT_PIN, 0 * FRONT_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER);
-    move_at_velocity(BACK_LEFT_PIN, 0 * BACK_LEFT_MULTIPLIER * GLOBAL_MULTIPLIER);
-    move_at_velocity(BACK_RIGHT_PIN, -750 * BACK_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER);
+    robot->move_at_velocity(FRONT_LEFT_PIN, -750 * FRONT_LEFT_MULTIPLIER * GLOBAL_MULTIPLIER);
+    robot->move_at_velocity(FRONT_RIGHT_PIN, 0);
+    robot->move_at_velocity(BACK_LEFT_PIN, 0);
+    robot->move_at_velocity(BACK_RIGHT_PIN, -750 * BACK_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER);
 }
 
 void move_diagonal_backward_right()
 {
-    move_at_velocity(FRONT_LEFT_PIN, 0 * FRONT_LEFT_MULTIPLIER * GLOBAL_MULTIPLIER);
-    move_at_velocity(FRONT_RIGHT_PIN, -750 * FRONT_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER);
-    move_at_velocity(BACK_LEFT_PIN, -750 * BACK_LEFT_MULTIPLIER * GLOBAL_MULTIPLIER);
-    move_at_velocity(BACK_RIGHT_PIN, 0 * BACK_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER);
+    robot->move_at_velocity(FRONT_LEFT_PIN, 0);
+    robot->move_at_velocity(FRONT_RIGHT_PIN, -750 * FRONT_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER);
+    robot->move_at_velocity(BACK_LEFT_PIN, -750 * BACK_LEFT_MULTIPLIER * GLOBAL_MULTIPLIER);
+    robot->move_at_velocity(BACK_RIGHT_PIN, 0);
 }
 
 void turn_clockwise_continuous()
 {
-    move_at_velocity(FRONT_LEFT_PIN, 750 * FRONT_LEFT_MULTIPLIER * GLOBAL_MULTIPLIER);
-    move_at_velocity(FRONT_RIGHT_PIN, -750 * FRONT_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER);
-    move_at_velocity(BACK_LEFT_PIN, 750 * BACK_LEFT_MULTIPLIER * GLOBAL_MULTIPLIER);
-    move_at_velocity(BACK_RIGHT_PIN, -750 * BACK_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER);
+    robot->move_at_velocity(FRONT_LEFT_PIN, 750 * FRONT_LEFT_MULTIPLIER * GLOBAL_MULTIPLIER);
+    robot->move_at_velocity(FRONT_RIGHT_PIN, -750 * FRONT_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER);
+    robot->move_at_velocity(BACK_LEFT_PIN, 750 * BACK_LEFT_MULTIPLIER * GLOBAL_MULTIPLIER);
+    robot->move_at_velocity(BACK_RIGHT_PIN, -750 * BACK_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER);
 }
 
 void turn_counter_clockwise_continuous()
 {
-    move_at_velocity(FRONT_LEFT_PIN, -750 * FRONT_LEFT_MULTIPLIER * GLOBAL_MULTIPLIER);
-    move_at_velocity(FRONT_RIGHT_PIN, 750 * FRONT_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER);
-    move_at_velocity(BACK_LEFT_PIN, -750 * BACK_LEFT_MULTIPLIER * GLOBAL_MULTIPLIER);
-    move_at_velocity(BACK_RIGHT_PIN, 750 * BACK_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER);
+    robot->move_at_velocity(FRONT_LEFT_PIN, -750 * FRONT_LEFT_MULTIPLIER * GLOBAL_MULTIPLIER);
+    robot->move_at_velocity(FRONT_RIGHT_PIN, 750 * FRONT_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER);
+    robot->move_at_velocity(BACK_LEFT_PIN, -750 * BACK_LEFT_MULTIPLIER * GLOBAL_MULTIPLIER);
+    robot->move_at_velocity(BACK_RIGHT_PIN, 750 * BACK_RIGHT_MULTIPLIER * GLOBAL_MULTIPLIER);
 }
 
 void turn_left_90_deg()
 {
     turn_counter_clockwise_continuous();
-    msleep(LEFT_NINETY_DEGREE_WAIT_MS);
+    robot->wait_for_milliseconds(LEFT_NINETY_DEGREE_WAIT_MS);
     stop();
 }
 
 void turn_right_90_deg()
 {
     turn_clockwise_continuous();
-    msleep(RIGHT_NINETY_DEGREE_WAIT_MS);
+    robot->wait_for_milliseconds(RIGHT_NINETY_DEGREE_WAIT_MS);
     stop();
 }
 
 void move_forward_for_distance(float distance)
 {
     move_forward();
-    msleep(MOVE_FORWARD_FOR_DISTANCE_CONSTANT * distance); // scale linearly by distance
+    robot->wait_for_milliseconds(MOVE_FORWARD_FOR_DISTANCE_CONSTANT * distance);
     stop();
 }
 
 void move_backward_for_distance(float distance)
 {
     move_backward();
-    msleep(MOVE_FORWARD_FOR_DISTANCE_CONSTANT * distance); // scale linearly by distance
+    robot->wait_for_milliseconds(MOVE_FORWARD_FOR_DISTANCE_CONSTANT * distance);
     stop();
 }
 
 void move_left_for_distance(float distance)
 {
     move_left();
-    msleep(MOVE_LEFT_FOR_DISTANCE_CONSTANT * distance);
+    robot->wait_for_milliseconds(MOVE_LEFT_FOR_DISTANCE_CONSTANT * distance);
     stop();
 }
 
 void move_right_for_distance(float distance)
 {
     move_right();
-    msleep(MOVE_RIGHT_FOR_DISTANCE_CONSTANT * distance);
+    robot->wait_for_milliseconds(MOVE_RIGHT_FOR_DISTANCE_CONSTANT * distance);
     stop();
 }
 
 void slowly_set_servo_position(int pin, int position, int wait_delay_ms = 10)
 {
-    int initial_pos = get_servo_position(pin);
+    // get_servo_position is intentionally excluded from Nano; safe to call raw as a read-only query
+    int current_pos = get_servo_position(pin);
 
-    while (initial_pos > position ? get_servo_position(pin) > position : get_servo_position(pin) < position)
+    while (current_pos > position ? current_pos > position : current_pos < position)
     {
-        set_servo_position(pin, get_servo_position(pin) + (initial_pos > position ? -10 : 10));
-        msleep(wait_delay_ms);
+        current_pos += (current_pos > position ? -10 : 10);
+        robot->set_servo_position(pin, current_pos);
+        robot->wait_for_milliseconds(wait_delay_ms);
     }
 }
 
 void turn_wrist_drop()
 {
-    enable_servo(PVC_WRIST);
+    robot->set_servo_enabled(PVC_WRIST, true);
     slowly_set_servo_position(PVC_WRIST, PVC_WRIST_DROP_VALUE);
-    disable_servo(PVC_WRIST);
+    robot->set_servo_enabled(PVC_WRIST, false);
 }
 
 void turn_wrist_pickup()
 {
-    enable_servo(PVC_WRIST);
+    robot->set_servo_enabled(PVC_WRIST, true);
     slowly_set_servo_position(PVC_WRIST, PVC_WRIST_PICKUP_VALUE);
-    disable_servo(PVC_WRIST);
+    robot->set_servo_enabled(PVC_WRIST, false);
 }
 
 void set_arm_up()
 {
-    enable_servo(PVC_ARM);
+    robot->set_servo_enabled(PVC_ARM, true);
     slowly_set_servo_position(PVC_ARM, PVC_ARM_RAISE_VALUE);
-    disable_servo(PVC_ARM);
+    robot->set_servo_enabled(PVC_ARM, false);
 }
 
 void set_arm_down()
 {
-    enable_servo(PVC_ARM);
+    robot->set_servo_enabled(PVC_ARM, true);
     slowly_set_servo_position(PVC_ARM, PVC_ARM_LOWER_VALUE);
-    disable_servo(PVC_ARM);
+    robot->set_servo_enabled(PVC_ARM, false);
 }
 
 bool is_fl_tophat_black()
 {
-    return analog(TOPHAT_FRONT_LEFT) > TOPHAT_FRONT_LEFT_THRESHOLD;
+    return robot->get_analog(TOPHAT_FRONT_LEFT) > TOPHAT_FRONT_LEFT_THRESHOLD;
 }
 
 bool is_fr_tophat_black()
 {
-    return analog(TOPHAT_FRONT_RIGHT) > TOPHAT_FRONT_RIGHT_THRESHOLD;
+    return robot->get_analog(TOPHAT_FRONT_RIGHT) > TOPHAT_FRONT_RIGHT_THRESHOLD;
 }
 
 bool is_bl_tophat_black()
 {
-    return analog(TOPHAT_BACK_LEFT) > TOPHAT_BACK_LEFT_THRESHOLD;
+    return robot->get_analog(TOPHAT_BACK_LEFT) > TOPHAT_BACK_LEFT_THRESHOLD;
 }
 
 bool is_br_tophat_black()
 {
-    return analog(TOPHAT_BACK_RIGHT) > TOPHAT_BACK_RIGHT_THRESHOLD;
+    return robot->get_analog(TOPHAT_BACK_RIGHT) > TOPHAT_BACK_RIGHT_THRESHOLD;
 }
 
 void line_up_with_black_line_front()
@@ -283,29 +287,32 @@ void line_up_with_black_line_behind()
 
 int main()
 {
+    Nano::BaseRobot r;
+    robot = &r;
+
     //start positions
     set_arm_up();
-    turn_wrist_up();
+    turn_wrist_pickup();
 
     //getting pvcs
-    move_forward_for_distance(1.0)     //temp val
+    move_forward_for_distance(1.0);     //temp val
     set_arm_down();
     turn_wrist_pickup();
 
     //lining up for dropping pvcs
     turn_right_90_deg();
     turn_right_90_deg();
-    move_forward_for_distance(1.0) //temp val
-    line_up_with_black_line_front()
-    move_forward_for_distance(1.0) //temp val
+    move_forward_for_distance(1.0); //temp val
+    line_up_with_black_line_front();
+    move_forward_for_distance(1.0); //temp val
 
     //dropping pvcs
     set_arm_up();
-    turn_wrist_drop()
-
-
     turn_wrist_drop();
-    set_arm_drop();
+
+    //reset
+    turn_wrist_drop();
+    set_arm_down();
 }
 
 /*
