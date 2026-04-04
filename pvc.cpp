@@ -403,16 +403,14 @@ int main()
     turn_wrist_pickup();
 
     //getting pvcs
-    turn(90);
-    turn(90);
-    go_straight(-1.0, 1.0);     //temp val
+    go_sideways(50.0, -4.0);
+    go_straight(-1.0, 1.0);
+    go_straight(50.0, 10.0);     //temp val
     set_arm_down();
     turn_wrist_pickup();
 
-    //lining z for dropping pvcs
-    go_straight(1.0, 1.0);     //temp val
-    turn(90);
-    turn(90);
+    //lining up for dropping pvcs
+    go_straight(-1.0, 1.0);     //temp val
     line_up_with_black_line_front();
     go_straight(-1.0, 1.0);     //temp val
 
@@ -420,10 +418,6 @@ int main()
 
     set_arm_up();
     turn_wrist_drop();
-
-    //reset
-    turn_wrist_drop();
-    set_arm_down();
 }
 
 /*
