@@ -403,20 +403,23 @@ int main()
     turn_wrist_pickup();
 
     //getting pvcs
-    go_sideways(50.0, -4.0);
-    go_straight(-1.0, 1.0);
-    go_straight(50.0, 10.0);     //temp val
+    go_sideways(50.0, 4.0);
+    go_straight(50.0, 10.0);     //leaving box
+
     set_arm_down();
     turn_wrist_pickup();
 
+    go_sideways(-50.0, 1.0);    //to ram into wall on the side
+    go_straight(-50.0, 1.0);    //and align with the dropper
+    msleep() //AG NEW
+    set_arm_up();
+
     //lining up for dropping pvcs
-    go_straight(-1.0, 1.0);     //temp val
+    go_straight(-50.0, 1.0);     //temp val
     line_up_with_black_line_front();
-    go_straight(-1.0, 1.0);     //temp val
+    go_straight(-50.0, 1.0);     //temp val
 
     //dropping pvcs
-
-    set_arm_up();
     turn_wrist_drop();
 }
 
