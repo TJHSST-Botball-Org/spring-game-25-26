@@ -18,7 +18,7 @@ const int RAISE_ARM = 1325;
 const int LOWER_ARM = 1911;
 const int OPEN_CLAW = 450;
 const int CLOSE_CLAW = 950;
-const int SCOOP_LOWEST = 80;
+const int SCOOP_LOWEST = 60;
 const int RAMP_SCOOP = 525;
 const int LOWER_ARM_PALET = 1690;
    
@@ -183,7 +183,7 @@ int main() {
     store_arm();
     close_claw();
     open_claw();
-    turn(-5);
+    turn(-4);
      go_straight(30, 1.5, 1);
     lower_arm();
     close_claw();
@@ -193,29 +193,30 @@ int main() {
     lower_arm_palet();
     open_claw();
     go_straight(50, 1.5, -1);
-    turn(5);
-    raise_arm();
-    msleep(
+    turn(4);
+    store_arm();
+    close_claw();
     turn(-90);
     go_straight(55, 7, 1);
     go_straight(60,1.2,-1);
     turn(-90);
     
-    go_straight(60, 4.5, -1);
+    go_straight(75, 4.25, -1);
     lower_scoop();
-    go_straight(60, 10, -1);
+    go_straight(75, 10, -1);
     scoop_lowest();
-    go_straight(100, 10,-1);
-    go_straight(15, 1.5, 1);
+    go_straight(75, 10,-1);
+    go_straight(15, 1.2, 1);
 
     middle_scoop();
-    go_straight(50, 21, 1);
-    ramp_scoop();
+    go_straight(50, 18, 1);
+    
    
-	turn(87);
-	go_straight(60,6,-1);
+	turn(90);
+	go_straight(60,8,-1);
+    ramp_scoop();
     turn(-90);
-    go_straight(60,10,-1);
+    go_straight(100,10,-1);
 
 
 	
