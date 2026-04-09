@@ -12,20 +12,20 @@ const int ARM_PIN = 1;
 const int UPPER_SCOOP = 1030;
 const int MIDDLE_SCOOP = 360;//400
 const int LOWER_SCOOP = 100;//121
-const int STORAGE_SCOOP = 1300;
+const int STORAGE_SCOOP = 1015;
 const int STORAGE_ARM = 1000;
 const int RAISE_ARM = 1325;
 const int LOWER_ARM = 1911;
 const int OPEN_CLAW = 450;
 const int CLOSE_CLAW = 950;
-const int SCOOP_LOWEST = 60;
+const int SCOOP_LOWEST = 85;
 const int RAMP_SCOOP = 525;
 const int LOWER_ARM_PALET = 1690;
    
 
 void go_straight(double speed, double duration_sec, int direction) {
     double start_time = seconds();
-    double Kp = 4.3;
+    double Kp = 4.2;
     double baseline = orientation.load();
 
     while (seconds() - start_time < duration_sec) {
@@ -178,13 +178,17 @@ int main() {
     std::cout << "Driving straight...\n";
     
    
+ 
     //pick up cubes
     store_scoop();
     store_arm();
     close_claw();
     open_claw();
-    turn(-4);
-     go_straight(30, 1.5, 1);
+    turn(-90);
+    go_straight(40, 5.5, 1);
+    turn(90);
+    go_straight(40, 1, -1);
+    go_straight(35, 3.5, 1);
     lower_arm();
     close_claw();
     raise_arm();
@@ -192,20 +196,19 @@ int main() {
     go_straight(50, 1.35, 1);
     lower_arm_palet();
     open_claw();
-    go_straight(50, 1.5, -1);
-    turn(4);
+    go_straight(50, 3, -1);
     store_arm();
     close_claw();
-    turn(-90);
-    go_straight(55, 7, 1);
-    go_straight(60,1.2,-1);
-    turn(-90);
+    turn(90);
+    go_straight(55, 7, -1);
+    //go_straight(60,1.2,-1);
+    turn(90);
     
     go_straight(75, 4.25, -1);
     lower_scoop();
     go_straight(75, 10, -1);
     scoop_lowest();
-    go_straight(75, 10,-1);
+    go_straight(75, 7, -1);
     go_straight(15, 1.2, 1);
 
     middle_scoop();
