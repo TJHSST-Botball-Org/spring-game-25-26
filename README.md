@@ -6,6 +6,6 @@ pvc.cpp is code for our PVC robot
 
 barlift.cpp is code for our 4-bar-lift robot
 
-shared.cpp is where the shared gyro value is
+shared.h is where the shared gyro value is
 
 enjoy,
