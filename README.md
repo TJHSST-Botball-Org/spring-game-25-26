@@ -8,4 +8,4 @@ barlift.cpp is code for our 4-bar-lift robot
 
 shared.h is where the shared gyro value is
 
-enjoy,
+enjoy!
