@@ -10,8 +10,8 @@ const int CLAW_PIN = 0;
 const int ARM_PIN = 1;
 
 const int UPPER_SCOOP = 1030;
-const int MIDDLE_SCOOP = 360;//400
-const int LOWER_SCOOP = 95;//121
+const int MIDDLE_SCOOP = 360;//could be 400
+const int LOWER_SCOOP = 95;//another version 121
 const int STORAGE_SCOOP = 1015;
 const int STORAGE_ARM = 1000;
 const int RAISE_ARM = 1325;
