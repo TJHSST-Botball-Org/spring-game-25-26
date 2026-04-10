@@ -17,10 +17,11 @@ const int armDropTemp = 1499;
 const int wristDropTemp = 975;
 
 const int PVC_ARM_RAISE_VALUE = 1231;
-const int PVC_ARM_LOWER_VALUE = 120; // TENTATIVE, WE DONT HAVE WHEELS YET SO THIS COULD CHANGE 200
+const int PVC_ARM_LOWER_VALUE = 176; // TENTATIVE, WE DONT HAVE WHEELS YET SO THIS COULD CHANGE 200    120
+const int PVC_ARM_FULL_LOWER_VALUE = 67; //FOR WHEN WE REACH THE DISPENSOR. PUTTING IT AT THIS ALL THE TIME MESSES WITH MOVING.
 const int PVC_ARM_STOW_VALUE = 413;  // TENTATIVE, WE DONT HAVE WHEELS YET SO THIS COULD CHANGE
 const int PVC_WRIST_DROP_VALUE = 1404;
-const int PVC_WRIST_PICKUP_VALUE = 400; //292    350
+const int PVC_WRIST_PICKUP_VALUE = 395; //292    350      400
 
 const int TOPHAT_FRONT_LEFT = 0;
 const int TOPHAT_FRONT_RIGHT = 1;
@@ -40,7 +41,7 @@ std::atomic<bool> nr3(true);
 void turn_right_90(){
     double o = orientation;
     while((orientation-o)<90){
-        std::cout << std::to_string(orientation) + " - turning right" <<std::endl;
+        std::cout << std::to_string(orientation) + " - turning right" <<std::endl;   
     }
 }
 
@@ -87,24 +88,24 @@ void go_straight_until_tophat(double speed) {
     double last_time = seconds();
     double Kp = 1.09;
     double gx = orientation;
-
+    
     while (analog(0) < TOPHAT_FRONT_LEFT_THRESHOLD && analog(1) < TOPHAT_FRONT_RIGHT_THRESHOLD) {
         std::cout << "L: " << analog(0) << " R: " << analog(1) << " orientation: " << orientation << std::endl;
         double current_time = seconds();
         double dt = current_time - last_time;
         last_time = current_time;
-
+        
         double error = orientation - gx;
         double correction = Kp * error;
-
+        
         int left = speed - correction;
         int right = speed + correction;
-
+        
         motor(3, left);
         motor(1, left);
         motor(0, right);
         motor(2, right);
-
+        
         msleep(10);
     }
     ao();
@@ -115,22 +116,22 @@ void go_sideways(double speed, double duration_sec) {
     double last_time = start_time;
     double Kp = 1.09;
     double gx = orientation;  // Lock in starting orientation
-
+    
     while (seconds() - start_time < duration_sec) {
         std::cout << orientation << std::endl;
         double current_time = seconds();
         double dt = current_time - last_time;
         last_time = current_time;
-
+        
         double error = orientation - gx;  // How far we've drifted
         double correction = Kp * error;
-
+        
         // Flipped correction signs
         motor(3, speed - correction);   // front-left
         motor(1, -speed - correction);  // back-left
         motor(2, speed + correction);   // back-right
         motor(0, -speed + correction);  // front-right
-
+        
         msleep(10);
     }
     ao();
@@ -153,7 +154,7 @@ void turn(int amount){
             motor(0, -speed);
             motor(1, -speed);
             motor(3, speed);
-            motor(2, speed);
+            motor(2, speed);   
             msleep(10);
         }
         ao();
@@ -168,7 +169,7 @@ void turn(int amount){
             motor(3, speed);
             motor(1, speed);
             motor(0, -speed);
-            motor(2, -speed);
+            motor(2, -speed);   
             msleep(10);
         }
         ao();
@@ -224,6 +225,13 @@ void set_arm_down()
     disable_servo(PVC_ARM);
 }
 
+void set_arm_fully_down() //for the slammed position
+{
+    enable_servo(PVC_ARM);
+    slowly_set_servo_position(PVC_ARM, PVC_ARM_FULL_LOWER_VALUE);
+    disable_servo(PVC_ARM);
+}
+
 int main()
 {
     set_arm_up();
@@ -248,50 +256,74 @@ int main()
     turn_wrist_pickup();
     go_sideways(-50, 2);
     */
-
+    
     //set_arm_up();
     //turn_wrist_pickup();
-
+    
+	//go_sideways(50, 300);
+    
     //getting pvcs
-    go_straight_until_tophat(80); //old speed was 50
+    go_straight_until_tophat(100); //old speed was 50 and 80
     //go_sideways(50.0, 4.0);
-    go_straight(80.0, 2.8);     //leaving box 5.8 2.9
-	go_sideways(80, 1.7); //2.5
-    go_straight(80, 3); //5
-    set_arm_down();
+    go_straight(100.0, 1.9);     //leaving box 5.8 2.9 2.3     speed was 80
+	go_sideways(100, 1.9); //2.5 speed was 80
+    go_straight(100, 2); //5    speed was 80
+    msleep(3200); //miss the first pvc and get the 2nd - 5th. so we dont rush the speed - more accurate   2800
     turn_wrist_pickup();
+    set_arm_down();
 
     go_sideways(-50.0, 3);    //to ram into wall on the side
     go_straight(50.0, 0.12);    //and align with the dropper
-    msleep(32000); //AG NEW old was 28000
+    set_arm_fully_down();
+    msleep(26500); //AG NEW old was 28000    320000     24000
     set_arm_up();
+    msleep(4500);
 
     //lining up for dropping pvcs
     go_straight(-50.0, 1.0);     //temp val
     //line_up_with_black_line_front();
-    go_straight(-50.0, 8.0);     //temp val
+    go_straight(-50.0, 8.2);     //temp val 8.0 seconds old
 	go_sideways(-50,4);
     go_straight(-50,0.5);
     go_sideways(50,0.5);
+    go_straight(-50.0, 0.99); //0.5 seconds
     //dropping pvcs
     turn_wrist_drop();
+    go_sideways(100, 0.1); //holy shake
+    go_sideways(-100, 0.1);
+    go_sideways(100, 0.1);
+    go_sideways(-100, 0.1);
+    go_sideways(100, 0.1);
+    go_sideways(-100, 0.1);
+    go_sideways(100, 0.1);
+    go_sideways(-100, 0.1);
+    go_sideways(100, 0.1);
+    go_sideways(-100, 0.1);
+    go_sideways(100, 0.1);
+    go_sideways(-100, 0.1);
     msleep(5000);
     turn_wrist_pickup();
-
+    
     //go back to get more
     go_straight_until_tophat(50);
-    go_straight(50.0, 5.8);
+    go_straight(50.0, 4.0);    //5.8
     go_sideways(50.0, 3);
     go_straight(50, 5);
     set_arm_down();
     go_sideways(50.0, 5);
     go_straight(50.0, 0.12);
     msleep(000); //part 2, after dropping the first set
-
+    
     set_arm_up();
+    go_straight(50, 2);
     go_straight(-50.0, 3);
-    go_sideways(50, 20);
+    go_sideways(100, 10); //old speed 50 and 20 seconds
+    go_straight(50, 4);
+    go_straight(-50, 2);
+    go_sideways(-50, 1.5); //0.5
+    turn(-90);
+    go_straight(-50, 1); //new
     turn_wrist_drop();
     msleep(3000);
-
+    
 }
