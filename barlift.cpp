@@ -11,7 +11,7 @@ const int ARM_PIN = 1;
 
 const int UPPER_SCOOP = 1030;
 const int MIDDLE_SCOOP = 360;//400
-const int LOWER_SCOOP = 100;//121
+const int LOWER_SCOOP = 95;//121
 const int STORAGE_SCOOP = 1015;
 const int STORAGE_ARM = 1000;
 const int RAISE_ARM = 1325;
@@ -177,52 +177,58 @@ int main() {
 
     std::cout << "Driving straight...\n";
     
-   
- 
-    //pick up cubes
+    
+    //set up
     store_scoop();
     store_arm();
     close_claw();
+
+	//pick up cubes
     open_claw();
     turn(-90);
-    go_straight(40, 5.5, 1);
+    go_straight(40, 4.5, 1);
     turn(90);
-    go_straight(40, 1, -1);
-    go_straight(35, 3.5, 1);
+    go_straight(40, 2.2, -1);
+    go_straight(35, 3.7, 1);
     lower_arm();
     close_claw();
     raise_arm();
+	
     //place cubes on other pallet
-    go_straight(50, 1.35, 1);
+    go_straight(50, 1.5, 1);
     lower_arm_palet();
     open_claw();
-    go_straight(50, 3, -1);
+
+	//leave start box
+    go_straight(50, 1.65, -1);
     store_arm();
     close_claw();
-    turn(90);
-    go_straight(55, 7, -1);
-    //go_straight(60,1.2,-1);
-    turn(90);
-    
-    go_straight(75, 4.25, -1);
+    turn(150);
+    go_straight(55, 5.3, -1);
+    turn(30);
+
+	// push cones
+    go_straight(75, 4, -1);
     lower_scoop();
     go_straight(75, 10, -1);
     scoop_lowest();
-    go_straight(75, 7, -1);
+    go_straight(75, 5.3, -1);
+
+	//pick up cones
     go_straight(15, 1.2, 1);
-
     middle_scoop();
-    go_straight(50, 18, 1);
-    
-   
-	turn(90);
-	go_straight(60,8,-1);
-    ramp_scoop();
+
+	//go back to start box
+    go_straight(50, 20, 1);
     turn(-90);
-    go_straight(100,10,-1);
+    go_straight(50, 7.2, 1);
+    turn(-90);
 
-
-	
+	//go up ramp
+    ramp_scoop();
+    go_straight(60, 10, 1);
+    middle_scoop();
+   
 
     
 
