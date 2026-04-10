@@ -203,7 +203,7 @@ int main() {
     std::cout << "Driving straight...\n";
     
     
-    //set up
+    //set up; add wait for light before comp
     store_scoop();
     store_arm();
     close_claw();
