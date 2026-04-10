@@ -43,11 +43,6 @@ void go_straight_normal(double speed, double duration_sec, int direction) { //no
         left  = std::max(-100, std::min(100, left));
         right = std::max(-100, std::min(100, right));
 
-        std::cout << "ori=" << orientation.load()
-                  << " err=" << error
-                  << " L=" << left
-                  << " R=" << right << std::endl;
-
         motor(2, right);
         motor(3, left);
 
