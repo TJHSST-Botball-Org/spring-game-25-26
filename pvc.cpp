@@ -20,6 +20,8 @@ const int PVC_ARM_RAISE_VALUE = 1231;
 const int PVC_ARM_LOWER_VALUE = 176; // TENTATIVE, WE DONT HAVE WHEELS YET SO THIS COULD CHANGE 200    120
 const int PVC_ARM_FULL_LOWER_VALUE = 67; //FOR WHEN WE REACH THE DISPENSOR. PUTTING IT AT THIS ALL THE TIME MESSES WITH MOVING.
 const int PVC_ARM_STOW_VALUE = 413;  // TENTATIVE, WE DONT HAVE WHEELS YET SO THIS COULD CHANGE
+const int PVC_ARM_START_VALUE = 1510;
+const int PVC_WRIST_START_VALUE = 2407;
 const int PVC_WRIST_DROP_VALUE = 1404;
 const int PVC_WRIST_PICKUP_VALUE = 395; //292    350      400
 
@@ -232,8 +234,20 @@ void set_arm_fully_down() //for the slammed position
     disable_servo(PVC_ARM);
 }
 
+void start_position(){
+    enable_servo(PVC_ARM);
+    slowly_set_servo_position(PVC_ARM, PVC_ARM_START_VALUE);
+    disable_servo(PVC_ARM);
+    
+    enable_servo(PVC_WRIST);
+    slowly_set_servo_position(PVC_WRIST, PVC_WRIST_START_VALUE);
+    disable_servo(PVC_WRIST);
+}
+
 int main()
 {
+    //start_position();
+    //msleep(100);
     set_arm_up();
     turn_wrist_drop();
     //set_arm_down();
@@ -244,6 +258,8 @@ int main()
     gyro_bot.calibrate_gyro();
 	msleep(1000);
     gyro_bot.get_gyro_x();
+    
+
 /*
     set_arm_up();
     turn_wrist_pickup();
@@ -275,41 +291,61 @@ int main()
     go_sideways(-50.0, 3);    //to ram into wall on the side
     go_straight(50.0, 0.12);    //and align with the dropper
     set_arm_fully_down();
-    msleep(26500); //AG NEW old was 28000    320000     24000
+    msleep(28000); //AG NEW old was 28000    320000     24000 26500
     set_arm_up();
-    msleep(4500);
+    msleep(3850); //4500   4350 (this was with no change to line 294)
 
     //lining up for dropping pvcs
     go_straight(-50.0, 1.0);     //temp val
     //line_up_with_black_line_front();
     go_straight(-50.0, 8.2);     //temp val 8.0 seconds old
 	go_sideways(-50,4);
-    go_straight(-50,0.5);
+    go_straight(-50,0.62); //0.5
     go_sideways(50,0.5);
-    go_straight(-50.0, 0.99); //0.5 seconds
+    go_straight(-50.0, 1.3); //0.5 seconds     0.99
     //dropping pvcs
+    go_straight(100, 0.04); //new to adjust for new arm
     turn_wrist_drop();
+    go_straight(100, 0.06); //new to adjust for new arm
     go_sideways(100, 0.1); //holy shake
     go_sideways(-100, 0.1);
-    go_sideways(100, 0.1);
+    go_straight(100, 0.06);
+    go_straight(-100, 0.06);
+	    go_sideways(100, 0.1); //holy shake
     go_sideways(-100, 0.1);
-    go_sideways(100, 0.1);
+    go_straight(100, 0.06);
+    go_straight(-100, 0.06);
+        go_sideways(100, 0.1); //holy shake
     go_sideways(-100, 0.1);
-    go_sideways(100, 0.1);
+    go_straight(100, 0.06);
+    go_straight(-100, 0.06);
+        go_sideways(100, 0.1); //holy shake
     go_sideways(-100, 0.1);
-    go_sideways(100, 0.1);
+    go_straight(100, 0.06);
+    go_straight(-100, 0.06);
+    go_sideways(100, 0.1); //holy shake
     go_sideways(-100, 0.1);
-    go_sideways(100, 0.1);
+    go_straight(100, 0.06);
+    go_straight(-100, 0.06);
+    go_sideways(100, 0.1); //holy shake
     go_sideways(-100, 0.1);
-    msleep(5000);
+    go_straight(100, 0.06);
+    go_straight(-100, 0.06);
+    go_sideways(100, 0.1); //holy shake
+    go_sideways(-100, 0.1);
+    go_straight(100, 0.06);
+    go_straight(-100, 0.06);
+    msleep(2200);
+    //slowly_set_servo_position(PVC_WRIST, PVC_WRIST_PICKUP_VALUE); //slowly do it yea
     turn_wrist_pickup();
     
     //go back to get more
-    go_straight_until_tophat(50);
+    go_straight_until_tophat(100);
     go_straight(50.0, 4.0);    //5.8
     go_sideways(50.0, 3);
     go_straight(50, 5);
     set_arm_down();
+    go_straight(-100, 0.25); //NEWW
     go_sideways(50.0, 5);
     go_straight(50.0, 0.12);
     msleep(000); //part 2, after dropping the first set
