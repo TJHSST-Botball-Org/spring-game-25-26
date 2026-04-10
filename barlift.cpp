@@ -62,6 +62,31 @@ void go_straight(double speed, double duration_sec, int direction) {
     ao();
 }
 
+void go_straight_until_tophat(double speed) {
+    double last_time = seconds();
+    double Kp = 1.09;
+    double gx = orientation;
+
+    while (analog(0) < TOPHAT_FRONT_LEFT_THRESHOLD && analog(1) < TOPHAT_FRONT_RIGHT_THRESHOLD) {
+        std::cout << "L: " << analog(0) << " R: " << analog(1) << " orientation: " << orientation << std::endl;
+        double current_time = seconds();
+        double dt = current_time - last_time;
+        last_time = current_time;
+
+        double error = orientation - gx;
+        double correction = Kp * error;
+
+        int left = speed - correction;
+        int right = speed + correction;
+
+        motor(2, right);
+		motor(3, left);
+
+        msleep(10);
+    }
+    ao();
+}
+
 void slowly_set_servo_position(int pin, int position) {
 	int currentPos = get_servo_position(pin);
     if (currentPos > position) {
