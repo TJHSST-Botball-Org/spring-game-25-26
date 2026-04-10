@@ -232,7 +232,7 @@ int main() {
     go_straight(55, 5.3, -1);
     turn(30);
 
-	// push cones
+	// push cones: idk if we need to change for tape
     go_straight(75, 4, -1);
     lower_scoop();
     go_straight(75, 10, -1);
