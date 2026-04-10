@@ -10,8 +10,8 @@ const int CLAW_PIN = 0;
 const int ARM_PIN = 1;
 
 const int UPPER_SCOOP = 1030;
-const int MIDDLE_SCOOP = 360;//could be 400
-const int LOWER_SCOOP = 95;//another version 121
+const int MIDDLE_SCOOP = 360;//400
+const int LOWER_SCOOP = 95;//121
 const int STORAGE_SCOOP = 1015;
 const int STORAGE_ARM = 1000;
 const int RAISE_ARM = 1325;
@@ -21,7 +21,41 @@ const int CLOSE_CLAW = 950;
 const int SCOOP_LOWEST = 85;
 const int RAMP_SCOOP = 525;
 const int LOWER_ARM_PALET = 1690;
-   
+
+void go_straight_normal(double speed, double duration_sec, int direction) { //non-gyro
+    double start_time = seconds();
+
+    while (seconds() - start_time < duration_sec) {
+        int right = 0;
+        int left = 0;
+
+        if(direction>0)
+        {
+        	left  = (int)(speed);
+        	right = (int)(-1)*(speed);
+        }
+        else
+        {
+            left  = (int)(-1)*(speed);
+        	right = (int)(speed);
+        }
+
+        left  = std::max(-100, std::min(100, left));
+        right = std::max(-100, std::min(100, right));
+
+        std::cout << "ori=" << orientation.load()
+                  << " err=" << error
+                  << " L=" << left
+                  << " R=" << right << std::endl;
+
+        motor(2, right);
+        motor(3, left);
+
+        msleep(10);
+    }
+    ao();
+}
+
 
 void go_straight(double speed, double duration_sec, int direction) {
     double start_time = seconds();
@@ -31,7 +65,7 @@ void go_straight(double speed, double duration_sec, int direction) {
     while (seconds() - start_time < duration_sec) {
         double error = orientation.load() - baseline;
         double correction = Kp * error;
-        
+
         int right = 0;
         int left = 0;
 
@@ -62,31 +96,6 @@ void go_straight(double speed, double duration_sec, int direction) {
     ao();
 }
 
-void go_straight_until_tophat(double speed) {
-    double last_time = seconds();
-    double Kp = 1.09;
-    double gx = orientation;
-
-    while (analog(0) < TOPHAT_FRONT_LEFT_THRESHOLD && analog(1) < TOPHAT_FRONT_RIGHT_THRESHOLD) {
-        std::cout << "L: " << analog(0) << " R: " << analog(1) << " orientation: " << orientation << std::endl;
-        double current_time = seconds();
-        double dt = current_time - last_time;
-        last_time = current_time;
-
-        double error = orientation - gx;
-        double correction = Kp * error;
-
-        int left = speed - correction;
-        int right = speed + correction;
-
-        motor(2, right);
-		motor(3, left);
-
-        msleep(10);
-    }
-    ao();
-}
-
 void slowly_set_servo_position(int pin, int position) {
 	int currentPos = get_servo_position(pin);
     if (currentPos > position) {
@@ -95,7 +104,7 @@ void slowly_set_servo_position(int pin, int position) {
         	msleep(10);
     	}
     }
-    
+
     if (currentPos < position) {
     	for (int i = currentPos; i<=position; i=i+15) {
     		set_servo_position(pin, i);
@@ -193,7 +202,7 @@ int main() {
     Nano::start_nano();
     Nano::BaseRobot robot;
     std::cout << "Robot created!" << std::endl;
-    
+
     enable_servos();
 
     robot.calibrate_gyro();
@@ -201,9 +210,9 @@ int main() {
     robot.get_gyro_x();
 
     std::cout << "Driving straight...\n";
-    
-    
-    //set up; add wait for light before comp
+
+
+    //set up
     store_scoop();
     store_arm();
     close_claw();
@@ -218,7 +227,7 @@ int main() {
     lower_arm();
     close_claw();
     raise_arm();
-	
+
     //place cubes on other pallet
     go_straight(50, 1.5, 1);
     lower_arm_palet();
@@ -232,7 +241,7 @@ int main() {
     go_straight(55, 5.3, -1);
     turn(30);
 
-	// push cones: idk if we need to change for tape
+	// push cones
     go_straight(75, 4, -1);
     lower_scoop();
     go_straight(75, 10, -1);
@@ -253,9 +262,9 @@ int main() {
     ramp_scoop();
     go_straight(60, 10, 1);
     middle_scoop();
-   
 
-    
+
+
 
     std::cout << "Done!" << std::endl;
     return 0;
