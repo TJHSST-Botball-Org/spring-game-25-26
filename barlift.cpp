@@ -206,59 +206,69 @@ int main() {
 
     std::cout << "Driving straight...\n";
 
-
-    //set up
+	//set up
     store_scoop();
     store_arm();
-    close_claw();
+    store_claw();
 
 	//pick up cubes
+    go_straight(100, 0.5, -1);
     open_claw();
     turn(-90);
-    go_straight(40, 4.5, 1);
+    go_straight(75, 2.3, 1);
     turn(90);
-    go_straight(40, 2.2, -1);
-    go_straight(35, 3.7, 1);
+    go_straight(75, 1.5, -1);
+    go_straight(75, 1.6, 1);
     lower_arm();
     close_claw();
     raise_arm();
-
+	
     //place cubes on other pallet
-    go_straight(50, 1.5, 1);
+    go_straight(75, 0.8, 1);
     lower_arm_palet();
     open_claw();
 
 	//leave start box
-    go_straight(50, 1.65, -1);
+    go_straight(75, 1.3, -1);
     store_arm();
     close_claw();
-    turn(150);
-    go_straight(55, 5.3, -1);
-    turn(30);
+    turn(140);
+    go_straight(100, 4.1, -1);
+    turn(39);
 
 	// push cones
-    go_straight(75, 4, -1);
     lower_scoop();
-    go_straight(75, 10, -1);
+    go_straight(85, 10, -1);
     scoop_lowest();
-    go_straight(75, 5.3, -1);
 
 	//pick up cones
-    go_straight(15, 1.2, 1);
+    go_straight(15, 1.3, 1);
     middle_scoop();
 
 	//go back to start box
-    go_straight(50, 20, 1);
+    turn(-15);
+    go_straight(100, 3.5, 1);
+    turn(16);
+    go_straight(100, 5, 1);
+    msleep(2000);
+    go_straight(100, 1, 1);
     turn(-90);
-    go_straight(50, 7.2, 1);
+    go_straight(100, 4, 1);
     turn(-90);
-
+    go_straight(50, 3, -1);
+    
 	//go up ramp
     ramp_scoop();
-    go_straight(60, 10, 1);
+    go_straight(100,3,1);
+    go_straight_normal(100,2,1);
+    turn(-20);
+    go_straight(100, 11, 1);
     middle_scoop();
-
-
+    
+    //go to start box
+    go_straight(100, 4.2, 1);
+    turn(-90);
+    raise_scoop();
 
 
     std::cout << "Done!" << std::endl;
