@@ -22,7 +22,7 @@ const int PVC_ARM_FULL_LOWER_VALUE = 67; //FOR WHEN WE REACH THE DISPENSOR. PUTT
 const int PVC_ARM_STOW_VALUE = 413;  // TENTATIVE, WE DONT HAVE WHEELS YET SO THIS COULD CHANGE
 const int PVC_ARM_START_VALUE = 1510;
 const int PVC_WRIST_START_VALUE = 2407;
-const int PVC_WRIST_DROP_VALUE = 1404;
+const int PVC_WRIST_DROP_VALUE = 1424;
 const int PVC_WRIST_PICKUP_VALUE = 395; //292    350      400
 
 const int TOPHAT_FRONT_LEFT = 0;
@@ -153,9 +153,9 @@ void turn(int amount){
             speed = orientation - (init_o + amount);
             speed = max(speed, 5);
             std::cout<< orientation << std::endl;
-            motor(0, -speed);
+            motor(0, speed);
             motor(1, -speed);
-            motor(3, speed);
+            motor(3, -speed);
             motor(2, speed);   
             msleep(10);
         }
@@ -242,12 +242,16 @@ void start_position(){
     enable_servo(PVC_WRIST);
     slowly_set_servo_position(PVC_WRIST, PVC_WRIST_START_VALUE);
     disable_servo(PVC_WRIST);
+    return;
 }
 
 int main()
 {
     //start_position();
+    wait_for_light(5);
+    shut_down_in(119);
     //msleep(100);
+    
     set_arm_up();
     turn_wrist_drop();
     //set_arm_down();
@@ -258,7 +262,6 @@ int main()
     gyro_bot.calibrate_gyro();
 	msleep(1000);
     gyro_bot.get_gyro_x();
-    
 
 /*
     set_arm_up();
@@ -284,29 +287,34 @@ int main()
     go_straight(100.0, 1.9);     //leaving box 5.8 2.9 2.3     speed was 80
 	go_sideways(100, 1.9); //2.5 speed was 80
     go_straight(100, 2); //5    speed was 80
-    msleep(3200); //miss the first pvc and get the 2nd - 5th. so we dont rush the speed - more accurate   2800
+    msleep(3000); //miss the first pvc and get the 2nd - 5th. so we dont rush the speed - more accurate   2800  3200
     turn_wrist_pickup();
     set_arm_down();
 
-    go_sideways(-50.0, 3);    //to ram into wall on the side
+    go_sideways(-60.0, 2.3);    //to ram into wall on the side //3     2.5
     go_straight(50.0, 0.12);    //and align with the dropper
     set_arm_fully_down();
-    msleep(28000); //AG NEW old was 28000    320000     24000 26500
+    msleep(27000); //AG NEW old was 28000    320000     24000 26500   28000
     set_arm_up();
     msleep(3850); //4500   4350 (this was with no change to line 294)
 
     //lining up for dropping pvcs
     go_straight(-50.0, 1.0);     //temp val
     //line_up_with_black_line_front();
-    go_straight(-50.0, 8.2);     //temp val 8.0 seconds old
-	go_sideways(-50,4);
-    go_straight(-50,0.62); //0.5
-    go_sideways(50,0.5);
-    go_straight(-50.0, 1.3); //0.5 seconds     0.99
+    go_straight(-50.0, 7.6);     //temp val 8.0 seconds old     8.2
+	go_sideways(-50,2.7); //4    2.5
+    go_straight(-50,1.45); //0.5   0.62    1.1     1.32
+    go_sideways(50,2.0); //0.5    1.5
+    go_sideways(-50, 1.33); //newwwwwwwwwwww 1.0 //1.5      1.75   1.54   1.06   1.3
+    //go_straight(100, 0.58); //NEW THIS IS ONLY FOR SEEDING REMEMBER TO REMOVE TS THIS IS BECAUSE WE HAVE LUNCHH  THGIBHTIOBHTIOHBIOERHB
+    //go_straight(-50.0, 1.3); //0.5 seconds     0.99   1.3
     //dropping pvcs
-    go_straight(100, 0.04); //new to adjust for new arm
+    //go_straight(-100, 0.5); new commetn out                                                                      bbbb
+    //go_straight(100, 0.06); // NEWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+    //go_straight(100, 0.04); //new to adjust for new arm
+    go_straight(100, 0.8);
     turn_wrist_drop();
-    go_straight(100, 0.06); //new to adjust for new arm
+    go_straight(100, 0.008); //new to adjust for new arm //0.06
     go_sideways(100, 0.1); //holy shake
     go_sideways(-100, 0.1);
     go_straight(100, 0.06);
@@ -336,21 +344,43 @@ int main()
     go_straight(100, 0.06);
     go_straight(-100, 0.06);
     msleep(2200);
+    turn(-10); //newwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+    go_straight(100, 0.05); //newwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
     //slowly_set_servo_position(PVC_WRIST, PVC_WRIST_PICKUP_VALUE); //slowly do it yea
     turn_wrist_pickup();
     
     //go back to get more
-    go_straight_until_tophat(100);
+    turn(-15);
+    go_sideways(-100, 3);
+    go_straight_until_tophat(100); //new
+    msleep(1000); //new
     go_straight(50.0, 4.0);    //5.8
     go_sideways(50.0, 3);
     go_straight(50, 5);
     set_arm_down();
-    go_straight(-100, 0.25); //NEWW
+    //go_straight(-100, 0.25); //NEWW
     go_sideways(50.0, 5);
     go_straight(50.0, 0.12);
     msleep(000); //part 2, after dropping the first set
     
+    return (0);
+    
     set_arm_up();
+    go_straight(-100, 0.15);
+    turn(10);
+    go_sideways(100, 11);
+    go_sideways(-100, 1);
+    go_straight(-100, 1);
+    turn(90);
+    go_sideways(-100, 1);
+    go_straight(100, 1);
+    go_sideways(100, 3);
+    go_sideways(-100, 3.5);
+    go_straight(100, 0.5);
+    go_sideways(100, 1);
+    go_straight(-100, 1);
+    turn(180);
+    /* this was the inital code. the code above is my plan b code
     go_straight(50, 2);
     go_straight(-50.0, 3);
     go_sideways(100, 10); //old speed 50 and 20 seconds
@@ -361,5 +391,6 @@ int main()
     go_straight(-50, 1); //new
     turn_wrist_drop();
     msleep(3000);
+    */
     
 }
